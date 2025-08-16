@@ -44,7 +44,9 @@ services:
     depends_on:
       - wordpress
     volumes:
-      - wordpress:/var/www/html
+      - wordpress:/var/www/wordpress
+    env_file:
+      - .env
     networks:
       - inception
     restart: unless-stopped
@@ -58,7 +60,7 @@ services:
     depends_on:
       - mariadb
     volumes:
-      - wordpress:/var/www/html
+      - wordpress:/var/www/wordpress
     env_file:
       - .env
     networks:
