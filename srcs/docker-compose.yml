@@ -32,6 +32,11 @@ services:
     networks:
       - inception
     restart: unless-stopped
+    healthcheck:
+    test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+    interval: 5s
+    timeout: 3s
+    retries: 5
 
   nginx:
     image: nginx:rcheong
@@ -58,7 +63,8 @@ services:
       context: ./requirements/wordpress
       dockerfile: Dockerfile
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     volumes:
       - wordpress:/var/www/wordpress
     env_file:
