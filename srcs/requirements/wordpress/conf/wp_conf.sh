@@ -3,25 +3,8 @@ set -e
 
 echo "Starting WordPress configuration..."
 
-#=== Debug Shell Setup ===
-setup_debug_shell() {
-    if [ "${DEBUG_MODE:-false}" = "true" ]; then
-        echo "DEBUG_MODE enabled - setting up zsh..."
-        chsh -s $(which zsh) 2>/dev/null || true
-        wget -q https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O /tmp/install.sh 2>/dev/null || true
-        if [ -f /tmp/install.sh ]; then
-            sed -i '553i echo alias wp=\\"wp --allow-root --path=/var/www/wordpress\\" >> ~/.zshrc' /tmp/install.sh
-            sh /tmp/install.sh --unattended 2>/dev/null || true
-            echo "alias zshi='sh /tmp/install.sh'" >> ~/.zshrc
-        fi
-        echo "Zsh setup complete"
-    fi
-}
-
-echo "Starting WordPress configuration..."
-
 #=== Database Connection Check ===
-wait_for_database() {
+wait_for_db() {
     echo "Waiting for MariaDB to be ready..."
     
     local start_time=$(date +%s)
@@ -30,20 +13,20 @@ wait_for_database() {
     
     while [ $(date +%s) -lt $end_time ]; do
         if nc -z mariadb 3306 >/dev/null 2>&1; then
-            echo "✅ MariaDB is up and running!"
+            echo "MariaDB is up and running!"
             return 0
         else
-            echo "⏳ Waiting for MariaDB to start..."
+            echo "Waiting for MariaDB to start..."
             sleep 3
         fi
     done
     
-    echo "❌ MariaDB connection timeout after ${timeout}s"
+    echo "MariaDB connection timeout after ${timeout}s"
     exit 1
 }
 
 #=== WordPress Installation ===
-setup_wordpress() {
+setup_wp() {
     echo "Setting up WordPress..."
     
     # Create WordPress directory with proper permissions
@@ -65,18 +48,18 @@ setup_wordpress() {
     
     # Check if WordPress is already installed
     if wp core is-installed --allow-root >/dev/null 2>&1; then
-        echo "✅ WordPress already installed, skipping setup"
+        echo "WordPress already installed, skipping setup"
         return 0
     fi
     
-    echo "🚀 Installing WordPress..."
+    echo "Installing WordPress..."
     
     # Clean directory and download WordPress
     find /var/www/wordpress/ -mindepth 1 -delete 2>/dev/null || true
     wp core download --allow-root
     
     # Configure WordPress database connection
-    echo "🔧 Configuring database connection..."
+    echo "Configuring database connection..."
     wp core config \
         --dbhost=mariadb:3306 \
         --dbname="${MYSQL_DB}" \
@@ -85,7 +68,7 @@ setup_wordpress() {
         --allow-root
     
     # Install WordPress
-    echo "📦 Installing WordPress core..."
+    echo "Installing WordPress core..."
     wp core install \
         --url="${DOMAIN_NAME}" \
         --title="${WP_TITLE}" \
@@ -95,7 +78,7 @@ setup_wordpress() {
         --allow-root
     
     # Create additional user
-    echo "👤 Creating additional user: ${WP_U_NAME}"
+    echo "Creating additional user: ${WP_U_NAME}"
     wp user create \
         "${WP_U_NAME}" \
         "${WP_U_EMAIL}" \
@@ -103,33 +86,32 @@ setup_wordpress() {
         --role="${WP_U_ROLE}" \
         --allow-root
     
-    echo "✅ WordPress installation completed!"
+    echo "WordPress installation completed!"
     
     # Set final permissions
     chown -R www-data:www-data /var/www/wordpress
 }
 
 #=== PHP-FPM Configuration ===
-configure_php_fpm() {
-    echo "🔧 Configuring PHP 8.2-FPM..."
+config_php_fpm() {
+    echo "Configuring PHP 8.2-FPM..."
     
     # Configure PHP-FPM to listen on port 9000 instead of socket
-    # Note: Path changed for PHP 8.2
     sed -i 's|listen = /run/php/php8.2-fpm.sock|listen = 9000|' /etc/php/8.2/fpm/pool.d/www.conf
     
     # Ensure PHP run directory exists
     mkdir -p /run/php
     
-    echo "✅ PHP 8.2-FPM configured for port 9000"
+    echo "PHP 8.2-FPM configured for port 9000"
 }
 
 #=== Main Execution ===
 main() {
-    wait_for_database
-    setup_wordpress
-    configure_php_fpm
+    wait_for_db
+    setup_wp
+    config_php_fpm
     
-    echo "🚀 Starting PHP 8.2-FPM server..."
+    echo "Starting PHP 8.2-FPM server..."
     exec /usr/sbin/php-fpm8.2 -F
 }
 

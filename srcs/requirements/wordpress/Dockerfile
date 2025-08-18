@@ -13,10 +13,7 @@ RUN apt-get update && apt-get upgrade -y \
         php8.2-mbstring \
         php8.2-xml \
         php8.2-zip \
-        php8.2-bcmath \
-        php8.2-imagick \
         mariadb-client \
-        wget \
         netcat-openbsd \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean

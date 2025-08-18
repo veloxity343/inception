@@ -1,5 +1,3 @@
-version: '3.8'
-
 volumes:
   mariadb:
     driver: local
@@ -33,10 +31,11 @@ services:
       - inception
     restart: unless-stopped
     healthcheck:
-    test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
-    interval: 5s
-    timeout: 3s
-    retries: 5
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
 
   nginx:
     image: nginx:rcheong
