@@ -1,14 +1,11 @@
-FROM debian:bullseye
+FROM debian:trixie
 
 RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y \
         nginx \
         openssl \
-        vim \
-        zsh \
-        wget \
-        git \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Create SSL directory
 RUN mkdir -p /etc/nginx/ssl

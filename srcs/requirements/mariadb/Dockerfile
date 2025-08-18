@@ -1,16 +1,13 @@
 # Base image
-FROM debian:bullseye
+FROM debian:trixie
 
 # Install necessary packages
 RUN apt-get update && apt-get upgrade -y \
-	&& apt-get install -y \
-		mariadb-server \
-		vim \
-		zsh \
-		wget \
-		git \
-		mycli \
-	&& rm -rf /var/lib/apt/lists/*
+    && apt-get install -y \
+        mariadb-server \
+        mariadb-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Copy config script
 COPY ./conf/mdb_conf.sh /mdb_conf.sh

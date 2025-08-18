@@ -18,21 +18,23 @@ setup_debug_shell() {
     fi
 }
 
+echo "Starting WordPress configuration..."
+
 #=== Database Connection Check ===
 wait_for_database() {
     echo "Waiting for MariaDB to be ready..."
     
     local start_time=$(date +%s)
-    local timeout=30
+    local timeout=60
     local end_time=$((start_time + timeout))
     
     while [ $(date +%s) -lt $end_time ]; do
-        if nc -zv mariadb 3306 >/dev/null 2>&1; then
+        if nc -z mariadb 3306 >/dev/null 2>&1; then
             echo "✅ MariaDB is up and running!"
             return 0
         else
             echo "⏳ Waiting for MariaDB to start..."
-            sleep 2
+            sleep 3
         fi
     done
     
@@ -109,26 +111,26 @@ setup_wordpress() {
 
 #=== PHP-FPM Configuration ===
 configure_php_fpm() {
-    echo "🔧 Configuring PHP-FPM..."
+    echo "🔧 Configuring PHP 8.2-FPM..."
     
     # Configure PHP-FPM to listen on port 9000 instead of socket
-    sed -i '36 s@/run/php/php7.4-fpm.sock@9000@' /etc/php/7.4/fpm/pool.d/www.conf
+    # Note: Path changed for PHP 8.2
+    sed -i 's|listen = /run/php/php8.2-fpm.sock|listen = 9000|' /etc/php/8.2/fpm/pool.d/www.conf
     
     # Ensure PHP run directory exists
     mkdir -p /run/php
     
-    echo "✅ PHP-FPM configured for port 9000"
+    echo "✅ PHP 8.2-FPM configured for port 9000"
 }
 
 #=== Main Execution ===
 main() {
-    setup_debug_shell
     wait_for_database
     setup_wordpress
     configure_php_fpm
     
-    echo "🚀 Starting PHP-FPM server..."
-    exec /usr/sbin/php-fpm7.4 -F
+    echo "🚀 Starting PHP 8.2-FPM server..."
+    exec /usr/sbin/php-fpm8.2 -F
 }
 
 # Run main function
