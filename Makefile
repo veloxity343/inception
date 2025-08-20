@@ -22,21 +22,21 @@ up: build
 	@echo "$(BLUE)Creating data directories at:$(RESET) $(DATA_PATH)"
 	@mkdir -p $(WP_DATA)
 	@mkdir -p $(DB_DATA)
-	docker-compose -f ./srcs/docker-compose.yml up -d
+	docker compose -f ./srcs/docker-compose.yml up -d
 
 down:
-	docker-compose -f ./srcs/docker-compose.yml down
+	docker compose -f ./srcs/docker-compose.yml down
 
 stop:
-	docker-compose -f ./srcs/docker-compose.yml stop
+	docker compose -f ./srcs/docker-compose.yml stop
 
 start:
-	docker-compose -f ./srcs/docker-compose.yml start
+	docker compose -f ./srcs/docker-compose.yml start
 
 build:
 	@clear
 	@echo "$(YELLOW)Building containers for user:$(RESET) $(LOGIN_NAME) on $(UNAME_S)"
-	docker-compose -f ./srcs/docker-compose.yml build
+	docker compose -f ./srcs/docker-compose.yml build
 
 # Debug shells
 ng:
