@@ -2,73 +2,69 @@ include ./srcs/.env
 export
 
 # Colors
-RED		=	\033[1;31m
-GREEN	=	\033[1;32m
-YELLOW	=	\033[1;33m
-BLUE	=	\033[1;34m
-RESET	=	\033[0m
+RED     = \033[1;31m
+GREEN   = \033[1;32m
+YELLOW  = \033[1;33m
+BLUE    = \033[1;34m
+RESET   = \033[0m
+
+# Scoped compose
+COMPOSE = docker compose -p inception -f ./srcs/docker-compose.yml
 
 # Detect environment
 LOGIN_NAME := $(shell whoami)
-UNAME_S := $(shell uname -s)
+UNAME_S    := $(shell uname -s)
 
-WP_DATA=$(DATA_PATH)/wordpress
-DB_DATA=$(DATA_PATH)/mariadb
+WP_DATA = $(DATA_PATH)/wordpress
+DB_DATA = $(DATA_PATH)/mariadb
 
-# Build rules
+# Default rule
 all: up
 
+# Build and start containers
 up: build
 	@echo "$(BLUE)Creating data directories at:$(RESET) $(DATA_PATH)"
 	@mkdir -p $(WP_DATA)
 	@mkdir -p $(DB_DATA)
-	docker compose -f ./srcs/docker-compose.yml up -d
+	$(COMPOSE) up -d
 
 down:
-	docker compose -f ./srcs/docker-compose.yml down
+	$(COMPOSE) down
 
 stop:
-	docker compose -f ./srcs/docker-compose.yml stop
+	$(COMPOSE) stop
 
 start:
-	docker compose -f ./srcs/docker-compose.yml start
+	$(COMPOSE) start
 
 build:
 	@clear
 	@echo "$(YELLOW)Building containers for user:$(RESET) $(LOGIN_NAME) on $(UNAME_S)"
-	docker compose -f ./srcs/docker-compose.yml build
+	$(COMPOSE) build
 
 # Debug shells
 ng:
-	@docker exec -it nginx bash
+	@docker exec -it inception-nginx bash
 
 mdb:
-	@docker exec -it mariadb bash
+	@docker exec -it inception-mariadb bash
 
 wp:
-	@docker exec -it wordpress bash
+	@docker exec -it inception-wordpress bash
 
 # Cleanup rules
 clean:
-	@echo "$(RED)Stopping all containers.$(RESET)"
-	@docker stop $$(docker ps -qa) 2>/dev/null || true
-	@docker rm $$(docker ps -qa) 2>/dev/null || true
-	@docker rmi -f $$(docker images -qa) 2>/dev/null || true
-	@docker volume rm $$(docker volume ls -q) 2>/dev/null || true
-	@docker network rm $$(docker network ls -q) 2>/dev/null || true
-	@echo "$(YELLOW)Note: Data not removed. Preserved in:$(RESET) $(DATA_PATH)"
+	@echo "$(RED)Stopping and removing Inception containers/networks.$(RESET)"
+	$(COMPOSE) down --remove-orphans
+	@echo "$(YELLOW)Note: Persistent data (volumes) is still preserved.$(RESET)"
 
-fclean: clean
-	@echo "$(RED)WARNING: This will delete ALL data!$(RESET)"
-	@read -p "Are you sure? (y/N): " confirm && [ "$$confirm" = "y" ]
-	@rm -rf $(DATA_PATH) 2>/dev/null || true
-	@echo "$(GREEN)All data removed.$(RESET)"
+fclean:
+	@echo "$(RED)WARNING: This will delete ALL Inception data (volumes)!$(RESET)"
+	@read -p "Are you sure? (y/N): " confirm && [ "$$confirm" = "y" ] && \
+	$(COMPOSE) down -v
+	@echo "$(GREEN)All project volumes removed safely.$(RESET)"
 
 re: clean up
-
-prune: fclean
-	@echo "$(RED)Pruning unused Docker resources.$(RESET)"
-	@docker system prune -a --volumes -f
 
 # Show data paths
 info:
@@ -79,8 +75,8 @@ info:
 	@echo "MariaDB data: $(DB_DATA)"
 
 logs:
-	docker logs mariadb
-	docker logs wordpress
-	docker logs nginx
+	@docker logs inception-mariadb
+	@docker logs inception-wordpress
+	@docker logs inception-nginx
 
-.PHONY: all up down stop start build ng mdb wp clean fclean re prune info
+.PHONY: all up down stop start build ng mdb wp clean fclean re info logs
