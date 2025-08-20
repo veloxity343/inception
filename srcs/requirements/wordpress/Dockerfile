@@ -1,4 +1,4 @@
-FROM debian:trixie
+FROM debian:bookworm
 
 # Install PHP-FPM and WordPress dependencies
 RUN apt-get update && apt-get upgrade -y \

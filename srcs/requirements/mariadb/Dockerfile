@@ -1,5 +1,4 @@
-# Base image
-FROM debian:trixie
+FROM debian:bookworm
 
 # Install necessary packages
 RUN apt-get update && apt-get upgrade -y \
