@@ -3,12 +3,6 @@ set -e
 
 echo "Starting MariaDB configuration..."
 
-# Ensure socket directory exists with proper permissions
-echo "Setting up MariaDB socket directory..."
-mkdir -p /run/mysqld
-chown mysql:mysql /run/mysqld
-chmod 755 /run/mysqld
-
 # Start MariaDB service
 echo "Starting MariaDB service."
 service mariadb start
