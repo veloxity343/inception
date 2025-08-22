@@ -1,11 +1,10 @@
 #!/bin/bash
 set -e
 
-echo "Starting MariaDB configuration..."
-
-# Start MariaDB service
-echo "Starting MariaDB service."
-service mariadb start
+echo "Starting MariaDB."
+mysqld_safe --port=3306 --bind-address=0.0.0.0 --datadir='/var/lib/mysql' &
+pid="$!"
+# service mariadb start
 
 # Wait for MariaDB to be ready
 echo "Waiting for MariaDB to start..."
@@ -42,9 +41,13 @@ mysql -u root -p$MYSQL_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"
 
 echo "Database '${MYSQL_DB}' and user '${MYSQL_USER}' created successfully"
 
-# Restart MariaDB for production
-echo "Restarting MariaDB for production mode..."
-mysqladmin -u root -p$MYSQL_ROOT_PASSWORD shutdown
+# Start MariaDB in foreground
+echo "MariaDB is now running in foreground."
+wait "$pid"
 
-echo "Starting MariaDB in production mode."
-exec mysqld_safe --port=3306 --bind-address=0.0.0.0 --datadir='/var/lib/mysql'
+# Restart MariaDB for production
+# echo "Restarting MariaDB for production mode..."
+# mysqladmin -u root -p$MYSQL_ROOT_PASSWORD shutdown
+
+# echo "Starting MariaDB in production mode."
+# exec mysqld_safe --port=3306 --bind-address=0.0.0.0 --datadir='/var/lib/mysql'

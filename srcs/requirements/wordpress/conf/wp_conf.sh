@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Starting WordPress configuration..."
+echo "Starting WordPress."
 
 #=== Database Connection Check ===
 wait_for_db() {

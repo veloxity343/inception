@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Starting NGINX configuration..."
+echo "Starting NGINX."
 
 # Generate self-signed SSL certificate
 echo "Generating SSL certificate for domain: ${DOMAIN_NAME}"
