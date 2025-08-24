@@ -28,7 +28,7 @@ AD_DATA = $(DATA_PATH)/adminer
 
 # Log directory
 LOG_DIR = ./logs
-LOG_FILE = $(LOG_DIR)/inception_$(TIMESTAMP).log
+LOG_FILE = $(LOG_DIR)/inception_$(TIMESTAMP).logs
 
 # Service definitions
 CORE_SERVICES = mariadb wordpress nginx
@@ -181,26 +181,26 @@ watch-%:
 #=============================================================================
 
 # View recent logs
-log:
+logs:
 	@echo "$(CYAN)=== Recent Logs ===$(RESET)"
 	$(COMPOSE) logs --tail=50
 
-log-%:
+logs-%:
 	@echo "$(CYAN)=== Recent $* Logs ===$(RESET)"
 	$(COMPOSE) logs --tail=50 $*
 
 # Save logs to file
-save-log:
-	@echo "$(BLUE)Saving logs to $(LOG_DIR)/containers_$(TIMESTAMP).log$(RESET)"
-	@$(COMPOSE) logs > $(LOG_DIR)/containers_$(TIMESTAMP).log
+save-logs:
+	@echo "$(BLUE)Saving logs to $(LOG_DIR)/containers_$(TIMESTAMP).logs$(RESET)"
+	@$(COMPOSE) logs > $(LOG_DIR)/containers_$(TIMESTAMP).logs
 	@echo "$(GREEN)Logs saved successfully$(RESET)"
 
 # Archive logs with timestamp
-archive-log:
+archive-logs:
 	@echo "$(BLUE)Archiving logs...$(RESET)"
 	@mkdir -p $(LOG_DIR)/archive
 	@for service in $(ALL_SERVICES); do \
-		$(COMPOSE) logs $$service > $(LOG_DIR)/archive/$${service}_$(TIMESTAMP).log 2>/dev/null || true; \
+		$(COMPOSE) logs $$service > $(LOG_DIR)/archive/$${service}_$(TIMESTAMP).logs 2>/dev/null || true; \
 	done
 	@echo "$(GREEN)Logs archived to $(LOG_DIR)/archive/$(RESET)"
 
@@ -358,7 +358,7 @@ re: clean all
 # PHONY DECLARATIONS
 #=============================================================================
 
-.PHONY: all setup build up down restart start stop status watch log save-log archive-log \
+.PHONY: all setup build up down restart start stop status watch logs save-logs archive-logs \
         clean fclean clean-images create-dirs create-logs info services help re \
         ng mdb wp rd ad ftp \
         $(addprefix build-, $(ALL_SERVICES)) \
@@ -371,7 +371,7 @@ re: clean all
         $(addprefix redeploy-, $(ALL_SERVICES)) \
         $(addprefix status-, $(ALL_SERVICES)) \
         $(addprefix watch-, $(ALL_SERVICES)) \
-        $(addprefix log-, $(ALL_SERVICES)) \
+        $(addprefix logs-, $(ALL_SERVICES)) \
         $(addprefix shell-, $(ALL_SERVICES)) \
         $(addprefix exec-, $(ALL_SERVICES)) \
         $(addprefix clean-, $(ALL_SERVICES))
@@ -385,7 +385,7 @@ re: clean all
 # QUICK COMMANDS:
 # make up-wordpress      # Build and start only WordPress 
 # make rebuild-mariadb   # Rebuild MariaDB from scratch
-# make log-nginx		# View Nginx logs
+# make logs-nginx		# View Nginx logs
 # make shell-redis       # Open Redis shell
 # make status            # Show all service status  
 # make help              # Full help menu
