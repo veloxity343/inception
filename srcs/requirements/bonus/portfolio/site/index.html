@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ryan Cheong - Portfolio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 20px 0;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 5px solid #667eea;
+            margin: 0 auto 20px;
+            display: block;
+            object-fit: cover;
+        }
+
+        .name {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title {
+            font-size: 1.3rem;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+
+        .contact-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #555;
+        }
+
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: #764ba2;
+        }
+
+        .experience-item, .project-item {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s ease;
+        }
+
+        .experience-item:hover, .project-item:hover {
+            transform: translateX(10px);
+        }
+
+        .job-title, .project-title {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .company, .tech-stack {
+            color: #667eea;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .skill-category {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-top: 4px solid #667eea;
+        }
+
+        .skill-category h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .skill-tag {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .name {
+                font-size: 2rem;
+            }
+            
+            .contact-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="name">Ryan Cheong</div>
+                <div class="title">Software Developer & 42 Student</div>
+                
+                <div class="contact-info">
+                    <div class="contact-item">
+                        📧 ryan.cheongtl@gmail.com
+                    </div>
+                    <div class="contact-item">
+                        🌐 rcheong.42.fr
+                    </div>
+                    <div class="contact-item">
+                        📍 Kuala Lumpur, Malaysia
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">About Me</h2>
+                <p>Passionate software developer currently studying at 42 Kuala Lumpur. I love building robust applications and exploring new technologies. This Docker Inception project demonstrates my skills in containerisation, web services orchestration, and system administration.</p>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Projects</h2>
+                
+                <div class="project-item">
+                    <div class="project-title">Docker Inception</div>
+                    <div class="tech-stack">Docker, Nginx, WordPress, MariaDB, Redis, FTP, Adminer</div>
+                    <div class="date">2024</div>
+                    <p>A complete containerised web infrastructure featuring WordPress with Nginx reverse proxy, MariaDB database, Redis caching, FTP server, and Adminer database management. Built with custom Dockerfiles and docker-compose orchestration.</p>
+                </div>
+                
+                <div class="project-item">
+                    <div class="project-title">42 School Projects</div>
+                    <div class="tech-stack">C, C++, System Programming</div>
+                    <div class="date">2023-2024</div>
+                    <p>Various programming projects including libft (C library implementation), get_next_line (file reading), ft_printf (printf recreation), and system-level programming challenges.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Skills</h2>
+                <div class="skills-grid">
+                    <div class="skill-category">
+                        <h4>Programming Languages</h4>
+                        <div class="skill-tags">
+                            <span class="skill-tag">C</span>
+                            <span class="skill-tag">C++</span>
+                            <span class="skill-tag">JavaScript</span>
+                            <span class="skill-tag">Python</span>
+                            <span class="skill-tag">Bash</span>
+                        </div>
+                    </div>
+                    
+                    <div class="skill-category">
+                        <h4>DevOps & Tools</h4>
+                        <div class="skill-tags">
+                            <span class="skill-tag">Docker</span>
+                            <span class="skill-tag">Git</span>
+                            <span class="skill-tag">Linux</span>
+                            <span class="skill-tag">Nginx</span>
+                            <span class="skill-tag">Makefile</span>
+                        </div>
+                    </div>
+                    
+                    <div class="skill-category">
+                        <h4>Web Technologies</h4>
+                        <div class="skill-tags">
+                            <span class="skill-tag">HTML/CSS</span>
+                            <span class="skill-tag">WordPress</span>
+                            <span class="skill-tag">PHP</span>
+                            <span class="skill-tag">MySQL</span>
+                            <span class="skill-tag">Redis</span>
+                        </div>
+                    </div>
+                    
+                    <div class="skill-category">
+                        <h4>System Admin</h4>
+                        <div class="skill-tags">
+                            <span class="skill-tag">Docker Compose</span>
+                            <span class="skill-tag">SSL/TLS</span>
+                            <span class="skill-tag">FTP</span>
+                            <span class="skill-tag">Process Management</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Education</h2>
+                <div class="experience-item">
+                    <div class="job-title">42 Kuala Lumpur</div>
+                    <div class="company">Software Engineering Program</div>
+                    <div class="date">2023 - Present</div>
+                    <p>Intensive peer-to-peer learning program focusing on C/C++ programming, Unix systems, algorithms, and collaborative project development.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Built with ❤️ for the Docker Inception project</p>
+            <p>Containerised and served with Node.js</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -25,6 +25,7 @@ WP_DATA = $(DATA_PATH)/wordpress
 DB_DATA = $(DATA_PATH)/mariadb
 RD_DATA = $(DATA_PATH)/redis
 AD_DATA = $(DATA_PATH)/adminer
+PT_DATA = $(DATA_PATH)/portainer
 
 # Log directory
 LOG_DIR = ./logs

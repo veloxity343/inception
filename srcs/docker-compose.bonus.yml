@@ -12,6 +12,12 @@ volumes:
       type: none
       o: bind
       device: ${DATA_PATH}/adminer
+  portainer:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH}/portainer
 
 services:
   redis:
@@ -59,6 +65,33 @@ services:
     environment:
       - FTP_USER=ftpuser
       - FTP_PASS=ftppass
+    networks:
+      - inception
+    restart: unless-stopped
+  
+  portainer:
+    image: portainer:rcheong
+    container_name: inception-portainer
+    build:
+      context: ./requirements/bonus/portainer
+      dockerfile: Dockerfile
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - inception
+    restart: unless-stopped
+  
+  portfolio:
+    image: portfolio:rcheong
+    container_name: inception-portfolio
+    build:
+      context: ./requirements/bonus/portfolio
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
     networks:
       - inception
     restart: unless-stopped
