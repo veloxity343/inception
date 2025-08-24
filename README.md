@@ -9,7 +9,7 @@ You mustn't be afraid to dream a little bigger
 
 ## Table of Contents
 
-1. [Introduction to Containerization](#introduction-to-containerization)
+1. [Introduction to Containerisation](#introduction-to-containerisation)
 2. [Docker Deep Dive](#docker-deep-dive)
 3. [Why Use Virtual Machines?](#why-use-virtual-machines)
 4. [Project Overview](#project-overview)
@@ -21,11 +21,11 @@ You mustn't be afraid to dream a little bigger
 
 ---
 
-## Introduction to Containerization
+## Introduction to Containerisation
 
 ### What are Containers?
 
-Containers are lightweight, portable, and self-sufficient units that package an application and all its dependencies (libraries, system tools, code, runtime, system libraries) into a single deployable unit. Think of containers as standardized shipping containers for software.
+Containers are lightweight, portable, and self-sufficient units that package an application and all its dependencies (libraries, system tools, code, runtime, system libraries) into a single deployable unit. Think of containers as standardised shipping containers for software.
 
 #### Key Benefits:
 
@@ -57,14 +57,14 @@ Containers are lightweight, portable, and self-sufficient units that package an 
 ```
 
 **Virtual Machines:**
-- Full OS virtualization
+- Full OS virtualisation
 - Higher resource overhead
 - Stronger isolation
 - Slower startup times (minutes)
 - Managed by hypervisor
 
 **Containers:**
-- OS-level virtualization
+- OS-level virtualisation
 - Lower resource overhead
 - Process-level isolation
 - Faster startup times (seconds)
@@ -76,7 +76,7 @@ Containers are lightweight, portable, and self-sufficient units that package an 
 
 ### What is Docker?
 
-Docker is a containerization platform that uses OS-level virtualization to deliver software in packages called containers. It provides:
+Docker is a containerisation platform that uses OS-level virtualisation to deliver software in packages called containers. It provides:
 
 - **Docker Engine**: Container runtime that manages container lifecycle
 - **Docker Images**: Read-only templates used to create containers
@@ -157,58 +157,23 @@ Host OS (Windows/macOS) → VM (Linux) → Docker Containers
 #### 5. **Learning Platform**
 - Safe environment to experiment with system-level changes
 - Practice Linux administration skills
-- Learn containerization without host system risks
+- Learn containerisation without host system risks
 
-### Recommended VM Configurations
-
-| Use Case | CPU | RAM | Storage | OS |
-|----------|-----|-----|---------|-----|
-| Development | 2-4 cores | 4-8 GB | 20-40 GB | Debian |
-| Testing | 4-8 cores | 8-16 GB | 40-80 GB | Debian |
-| Production-like | 8+ cores | 16+ GB | 100+ GB | Debian |
 
 ---
 
 ## Project Overview
 
-The Inception project demonstrates a complete containerized web application infrastructure using Docker Compose. It implements a classic LEMP stack (Linux, NGINX, MariaDB, PHP) with WordPress as the content management system.
+The Inception project demonstrates a complete containerised web application infrastructure using Docker Compose. It implements a LEMP stack (Linux, NGINX, MariaDB, PHP) with WordPress as the content management system.
 
 ### Learning Objectives
 
-- Understanding containerization principles
+- Understanding containerisation principles
 - Mastering Docker and Docker Compose
 - Implementing service orchestration
 - Learning infrastructure as code
 - Practicing security best practices
 - Understanding networking and volumes
-
-### Project Structure
-```
-inception/
-├── Makefile                    # Build and management automation
-├── README.md                   # This documentation
-├── srcs/
-│   ├── .env                    # Environment variables
-│   ├── docker-compose.yml      # Core services definition
-│   ├── docker-compose.bonus.yml # Additional services
-│   └── requirements/
-│       ├── mariadb/
-│       │   ├── Dockerfile      # Database container
-│       │   ├── conf/
-│       │   └── tools/
-│       ├── nginx/
-│       │   ├── Dockerfile      # Web server container
-│       │   ├── conf/
-│       │   └── tools/
-│       ├── wordpress/
-│       │   ├── Dockerfile      # Application container
-│       │   ├── conf/
-│       │   └── tools/
-│       ├── redis/              # Caching service (bonus)
-│       ├── adminer/            # Database admin (bonus)
-│       └── ftp/                # File transfer (bonus)
-└── logs/                       # Application logs
-```
 
 ---
 
@@ -263,17 +228,14 @@ inception/
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                   inception_network                         │
-│                     (172.20.0.0/16)                         │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
 │  │   NGINX     │  │ WordPress   │  │      MariaDB        │  │
-│  │172.20.0.10  │  │172.20.0.20  │  │    172.20.0.30      │  │
 │  │Port: 443    │  │Port: 9000   │  │    Port: 3306       │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 │                                                             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
 │  │   Redis     │  │  Adminer    │  │       FTP           │  │
-│  │172.20.0.40  │  │172.20.0.50  │  │    172.20.0.60      │  │
 │  │Port: 6379   │  │Port: 8080   │  │    Port: 21, 21000- │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
@@ -285,18 +247,12 @@ inception/
 
 ### System Requirements
 
-**Host Machine:**
-- 8GB+ RAM recommended
-- 4+ CPU cores
-- 50GB+ available storage
-- Virtualization support (Intel VT-x / AMD-V)
-
 **Virtual Machine:**
-- Linux distribution (Debian recommended)
+- Linux distro
 - 4GB+ RAM allocated
-- 2+ CPU cores allocated
-- 30GB+ storage allocated
-- Internet connectivity
+- 4 CPU cores allocated
+- 64GB+ storage allocated
+- Shared network
 
 ### Software Requirements
 
@@ -304,25 +260,30 @@ inception/
 ```bash
 # Essential packages
 sudo apt update
-sudo apt install -y curl wget git vim make
+sudo apt install -y curl wget git vim build-essentials
 
-# Docker installation (official method)
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker $USER
+sudo apt install ca-certificates
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-# Docker Compose (if not included)
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+# Add the repo to apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # Verify installation
 docker --version
-docker-compose --version
+docker compose version
 ```
 
 ### Domain Configuration
 
-Add these entries to your `/etc/hosts` file:
+Add these entries to `/etc/hosts` file:
 ```bash
 # Inception project domains
 127.0.0.1 yourdomain.42.fr
@@ -348,7 +309,7 @@ vim srcs/.env
 
 ### 2. Environment Configuration
 
-Edit `srcs/.env` with your specific values:
+Edit `srcs/.env` with specific values:
 
 ```bash
 # Domain Configuration
@@ -361,7 +322,7 @@ MYSQL_USER=wp_user
 MYSQL_PASSWORD=your_secure_wp_password
 
 # WordPress Configuration  
-WP_TITLE="Your WordPress Site"
+WP_TITLE="WordPress Site"
 WP_ADMIN_USER=admin
 WP_ADMIN_PASSWORD=your_secure_admin_password
 WP_ADMIN_EMAIL=admin@yourdomain.42.fr
@@ -390,7 +351,7 @@ mkdir -p srcs/requirements/nginx/ssl
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout srcs/requirements/nginx/ssl/yourdomain.42.fr.key \
     -out srcs/requirements/nginx/ssl/yourdomain.42.fr.crt \
-    -subj "/C=US/ST=State/L=City/O=Organization/OU=OrgUnit/CN=yourdomain.42.fr"
+    -subj "/C=US/ST=State/L=City/O=Organisation/OU=OrgUnit/CN=yourdomain.42.fr"
 ```
 
 ### 4. Build and Deploy
@@ -459,7 +420,7 @@ make ftp              # FTP shell
 
 ### Service Access
 
-Once running, access your services at:
+Once running, access services at:
 
 | Service | URL | Purpose |
 |---------|-----|---------|
@@ -472,7 +433,7 @@ Once running, access your services at:
 1. Navigate to https://yourdomain.42.fr
 2. Complete WordPress installation wizard
 3. Login with admin credentials from `.env` file
-4. Configure your site as needed
+4. Configure site as needed
 
 ---
 
@@ -548,7 +509,7 @@ wp plugin install redis-cache --activate
 
 **Key Features**:
 - MariaDB 10.9 (MySQL-compatible)
-- Optimized configuration for WordPress
+- Optimised configuration for WordPress
 - Automatic database and user creation
 - Regular health checks
 - Data persistence via volumes
@@ -627,13 +588,13 @@ FLUSHALL
 
 ## Conclusion
 
-The Inception project provides a comprehensive introduction to containerization, Docker, and infrastructure management. Through building and managing a multi-service application stack, you gain hands-on experience with:
+The Inception project provides a comprehensive introduction to containerisation, Docker, and infrastructure management. Through building and managing a multi-service application stack, you gain hands-on experience with:
 
-- **Container Technology**: Understanding the fundamentals of containerization
+- **Container Technology**: Understanding the fundamentals of containerisation
 - **Docker Mastery**: Building images, managing containers, and orchestrating services
 - **Infrastructure as Code**: Using Docker Compose and Makefiles for automation
 - **Security Best Practices**: Implementing secure container configurations
-- **Performance Optimization**: Tuning services for production workloads
+- **Performance Optimisation**: Tuning services for production workloads
 - **Operational Excellence**: Monitoring, logging, and maintenance procedures
 
 ### Key Takeaways
@@ -643,7 +604,7 @@ The Inception project provides a comprehensive introduction to containerization,
 3. **Security First**: Always implement security best practices from the start
 4. **Infrastructure Automation**: Use tools like Make and Compose for repeatability
 5. **Monitoring and Observability**: Implement comprehensive monitoring from day one
-6. **Documentation**: Maintain clear, up-to-date documentation for your infrastructure
+6. **Documentation**: Maintain clear, up-to-date documentation for infrastructure
 
 ### Resources
 
@@ -657,4 +618,4 @@ The Inception project provides a comprehensive introduction to containerization,
 
 *Last updated: $(date +"%Y-%m-%d")*
 
-**Project Status**: ✅ Production Ready | 🔒 Security Audited | 📊 Performance Optimized
+**Project Status**: ✅ Production Ready | 🔒 Security Audited | 📊 Performance Optimised
