@@ -313,8 +313,8 @@ info:
 # Show available services
 services:
 	@echo "$(CYAN)=== Available Services ===$(RESET)"
-	@echo "Core services: mariadb nginx wordpress"
-	@echo "Bonus services: redis"
+	@echo "Core services: $(CORE_SERVICES)"
+	@echo "Bonus services: $(BONUS_SERVICES)"
 
 # Show help
 help:
@@ -358,9 +358,9 @@ re: clean all
 # PHONY DECLARATIONS
 #=============================================================================
 
-.PHONY: all setup build up down restart start stop status watch logs save-logs archive-logs \
+.PHONY: all setup build up down restart start stop status watch log save-log archive-log \
         clean fclean clean-images create-dirs create-logs info services help re \
-        ng mdb wp rd \
+        ng mdb wp rd ad ftp \
         $(addprefix build-, $(ALL_SERVICES)) \
         $(addprefix up-, $(ALL_SERVICES)) \
         $(addprefix down-, $(ALL_SERVICES)) \
@@ -371,7 +371,7 @@ re: clean all
         $(addprefix redeploy-, $(ALL_SERVICES)) \
         $(addprefix status-, $(ALL_SERVICES)) \
         $(addprefix watch-, $(ALL_SERVICES)) \
-        $(addprefix logs-, $(ALL_SERVICES)) \
+        $(addprefix log-, $(ALL_SERVICES)) \
         $(addprefix shell-, $(ALL_SERVICES)) \
         $(addprefix exec-, $(ALL_SERVICES)) \
         $(addprefix clean-, $(ALL_SERVICES))
@@ -385,7 +385,7 @@ re: clean all
 # QUICK COMMANDS:
 # make up-wordpress      # Build and start only WordPress 
 # make rebuild-mariadb   # Rebuild MariaDB from scratch
-# make logs-nginx        # View Nginx logs
+# make log-nginx		# View Nginx logs
 # make shell-redis       # Open Redis shell
 # make status            # Show all service status  
 # make help              # Full help menu
