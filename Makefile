@@ -62,7 +62,7 @@ build-all: setup
 
 build-%: setup
 	@echo "$(YELLOW)Building $* container.$(RESET)" | tee -a $(LOG_FILE)
-	$(COMPOSE) build $* 2>&1 | tee -a $(LOG_FILE)
+	$(COMPOSE) build $(PROJECT)-$* 2>&1 | tee -a $(LOG_FILE)
 
 # Start services
 up: build
@@ -187,7 +187,7 @@ logs:
 
 logs-%:
 	@echo "$(CYAN)=== Recent $* Logs ===$(RESET)"
-	$(COMPOSE) logs --tail=50 $*
+	$(COMPOSE) logs --tail=50 $(PROJECT)-$*
 
 # Save logs to file
 save-logs:
