@@ -20,7 +20,7 @@ networks:
 services:
   mariadb:
     image: mariadb:rcheong
-    container_name: mariadb
+    container_name: inception-mariadb
     build: 
       context: ./requirements/mariadb
       dockerfile: Dockerfile
@@ -40,7 +40,7 @@ services:
 
   nginx:
     image: nginx:rcheong
-    container_name: nginx
+    container_name: inception-nginx
     build:
       context: ./requirements/nginx
       dockerfile: Dockerfile
@@ -58,7 +58,7 @@ services:
 
   wordpress:
     image: wordpress:rcheong
-    container_name: wordpress
+    container_name: inception-wordpress
     build:
       context: ./requirements/wordpress
       dockerfile: Dockerfile

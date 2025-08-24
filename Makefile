@@ -352,20 +352,20 @@ re: clean all
 .PHONY: all setup build up down restart start stop status watch logs save-logs archive-logs \
         clean fclean clean-images create-dirs create-logs info services help re \
         ng mdb wp rd \
-        $(addprefix build-, $(SERVICES)) \
-        $(addprefix up-, $(SERVICES)) \
-        $(addprefix down-, $(SERVICES)) \
-        $(addprefix restart-, $(SERVICES)) \
-        $(addprefix start-, $(SERVICES)) \
-        $(addprefix stop-, $(SERVICES)) \
-        $(addprefix rebuild-, $(SERVICES)) \
-        $(addprefix redeploy-, $(SERVICES)) \
-        $(addprefix status-, $(SERVICES)) \
-        $(addprefix watch-, $(SERVICES)) \
-        $(addprefix logs-, $(SERVICES)) \
-        $(addprefix shell-, $(SERVICES)) \
-        $(addprefix exec-, $(SERVICES)) \
-        $(addprefix clean-, $(SERVICES))
+        $(addprefix build-, $(ALL_SERVICES)) \
+        $(addprefix up-, $(ALL_SERVICES)) \
+        $(addprefix down-, $(ALL_SERVICES)) \
+        $(addprefix restart-, $(ALL_SERVICES)) \
+        $(addprefix start-, $(ALL_SERVICES)) \
+        $(addprefix stop-, $(ALL_SERVICES)) \
+        $(addprefix rebuild-, $(ALL_SERVICES)) \
+        $(addprefix redeploy-, $(ALL_SERVICES)) \
+        $(addprefix status-, $(ALL_SERVICES)) \
+        $(addprefix watch-, $(ALL_SERVICES)) \
+        $(addprefix logs-, $(ALL_SERVICES)) \
+        $(addprefix shell-, $(ALL_SERVICES)) \
+        $(addprefix exec-, $(ALL_SERVICES)) \
+        $(addprefix clean-, $(ALL_SERVICES))
 
 #=============================================================================
 # QUICK REFERENCE

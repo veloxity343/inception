@@ -16,7 +16,7 @@ volumes:
 services:
   redis:
     image: redis:rcheong
-    container_name: redis
+    container_name: inception-redis
     build:
       context: ./requirements/bonus/redis
       dockerfile: Dockerfile
@@ -33,7 +33,7 @@ services:
 
   adminer:
     image: adminer:rcheong
-    container_name: adminer
+    container_name: inception-adminer
     build:
       context: ./requirements/bonus/adminer
       dockerfile: Dockerfile
@@ -47,7 +47,7 @@ services:
 
   ftp:
     image: ftp:rcheong
-    container_name: ftp
+    container_name: inception-ftp
     build:
       context: ./requirements/bonus/ftp
       dockerfile: Dockerfile
