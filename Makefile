@@ -35,6 +35,11 @@ CORE_SERVICES = mariadb wordpress nginx
 BONUS_SERVICES = redis adminer ftp
 ALL_SERVICES = $(CORE_SERVICES) $(BONUS_SERVICES)
 
+# Service-specific compose
+define get_compose_cmd
+$(if $(filter $1,$(BONUS_SERVICES)),$(COMPOSE_BONUS),$(COMPOSE))
+endef
+
 #=============================================================================
 # MAIN TARGETS
 #=============================================================================
@@ -47,7 +52,7 @@ setup: create-dirs create-logs
 	@echo "$(BLUE)Setting up inception for:$(RESET)"
 	@echo "$(YELLOW)User: $(LOGIN_NAME) | OS: $(UNAME_S) | Time: $(TIMESTAMP)$(RESET)"
 
-# Build all or specific services
+# Build services
 build: setup
 	@echo "$(YELLOW)Building core services.$(RESET)" | tee -a $(LOG_FILE)
 	$(COMPOSE) build 2>&1 | tee -a $(LOG_FILE)
@@ -62,7 +67,7 @@ build-all: setup
 
 build-%: setup
 	@echo "$(YELLOW)Building $* container.$(RESET)" | tee -a $(LOG_FILE)
-	$(COMPOSE) build $* 2>&1 | tee -a $(LOG_FILE)
+	$(call get_compose_cmd,$*) build $* 2>&1 | tee -a $(LOG_FILE)
 
 # Start services
 up: build
@@ -82,36 +87,35 @@ up-all: build-all
 
 up-%: build-%
 	@echo "$(GREEN)Starting $* service.$(RESET)" | tee -a $(LOG_FILE)
-	$(COMPOSE) up -d $* 2>&1 | tee -a $(LOG_FILE)
+	$(call get_compose_cmd,$*) up -d $* 2>&1 | tee -a $(LOG_FILE)
 	@$(MAKE) --no-print-directory status-$*
 
 #=============================================================================
-# SERVICE MANAGEMENT
+# SPECIFIC SERVICES
 #=============================================================================
 
-# Stop services
+# Global service management
 down:
 	@echo "$(RED)Stopping all services.$(RESET)" | tee -a $(LOG_FILE)
 	$(COMPOSE) down 2>&1 | tee -a $(LOG_FILE)
 
+# Stop services
 down-%:
 	@echo "$(RED)Stopping $* service.$(RESET)" | tee -a $(LOG_FILE)
-	$(COMPOSE) stop $* 2>&1 | tee -a $(LOG_FILE)
+	$(call get_compose_cmd,$*) stop $* 2>&1 | tee -a $(LOG_FILE)
 
-# Restart services  
 restart: down up
 
 restart-%: down-% up-%
 	@echo "$(CYAN)Restarted $* service$(RESET)"
 
-# Start/stop without rebuild
 start:
 	@echo "$(GREEN)Starting existing containers.$(RESET)"
 	$(COMPOSE) start
 
 start-%:
 	@echo "$(GREEN)Starting $* container.$(RESET)"
-	$(COMPOSE) start $*
+	$(call get_compose_cmd,$*) start $*
 
 stop:
 	@echo "$(YELLOW)Stopping containers.$(RESET)"
@@ -119,24 +123,25 @@ stop:
 
 stop-%:
 	@echo "$(YELLOW)Stopping $* container.$(RESET)"
-	$(COMPOSE) stop $*
+	$(call get_compose_cmd,$*) stop $*
 
 #=============================================================================
 # REBUILD TARGETS
 #=============================================================================
 
-# Rebuild specific service (no-cache)
+# Rebuild specific service
 rebuild-%: setup
 	@echo "$(PURPLE)Force rebuilding $* from scratch.$(RESET)" | tee -a $(LOG_FILE)
-	$(COMPOSE) build --no-cache $* 2>&1 | tee -a $(LOG_FILE)
-	$(COMPOSE) up -d $* 2>&1 | tee -a $(LOG_FILE)
+	$(call get_compose_cmd,$*) build --no-cache $* 2>&1 | tee -a $(LOG_FILE)
+	$(call get_compose_cmd,$*) up -d $* 2>&1 | tee -a $(LOG_FILE)
 	@$(MAKE) --no-print-directory status-$*
 
 # Rebuild and restart specific service
-redeploy-%: down-%
+redeploy-%:
 	@echo "$(PURPLE)Redeploying $* service.$(RESET)" | tee -a $(LOG_FILE)
-	$(COMPOSE) build --no-cache $* 2>&1 | tee -a $(LOG_FILE)
-	$(COMPOSE) up -d $* 2>&1 | tee -a $(LOG_FILE)
+	$(call get_compose_cmd,$*) stop $* 2>&1 | tee -a $(LOG_FILE)
+	$(call get_compose_cmd,$*) build --no-cache $* 2>&1 | tee -a $(LOG_FILE)
+	$(call get_compose_cmd,$*) up -d $* 2>&1 | tee -a $(LOG_FILE)
 	@$(MAKE) --no-print-directory status-$*
 
 #=============================================================================
@@ -163,7 +168,7 @@ status:
 # Status of specific service
 status-%:
 	@echo "$(CYAN)=== $* Status ===$(RESET)"
-	@$(COMPOSE) ps $*
+	@$(call get_compose_cmd,$*) ps $*
 	@health=$$(docker inspect --format='{{.State.Health.Status}}' $(PROJECT)-$* 2>/dev/null || echo "no-health-check"); \
 	echo "Health: $$health"
 
@@ -174,10 +179,10 @@ watch:
 
 watch-%:
 	@echo "$(CYAN)Watching $* logs.$(RESET)"
-	$(COMPOSE) logs -f $*
+	$(call get_compose_cmd,$*) logs -f $*
 
 #=============================================================================
-# LOGGING TARGETS  
+# LOGGING TARGETS
 #=============================================================================
 
 # View recent logs
@@ -187,7 +192,7 @@ logs:
 
 logs-%:
 	@echo "$(CYAN)=== Recent $* Logs ===$(RESET)"
-	$(COMPOSE) logs --tail=50 $*
+	$(call get_compose_cmd,$*) logs --tail=50 $*
 
 # Save logs to file
 save-logs:
@@ -200,7 +205,7 @@ archive-logs:
 	@echo "$(BLUE)Archiving logs...$(RESET)"
 	@mkdir -p $(LOG_DIR)/archive
 	@for service in $(ALL_SERVICES); do \
-		$(COMPOSE) logs $$service > $(LOG_DIR)/archive/$${service}_$(TIMESTAMP).logs 2>/dev/null || true; \
+		$(call get_compose_cmd,$$service) logs $$service > $(LOG_DIR)/archive/$${service}_$(TIMESTAMP).logs 2>/dev/null || true; \
 	done
 	@echo "$(GREEN)Logs archived to $(LOG_DIR)/archive/$(RESET)"
 
@@ -242,19 +247,19 @@ exec-%:
 # CLEANUP TARGETS
 #=============================================================================
 
-# Clean containers and networks (keep volumes)
+# Clean containers and networks
 clean:
 	@echo "$(RED)Stopping and removing containers/networks.$(RESET)" | tee -a $(LOG_FILE)
 	$(COMPOSE) down --remove-orphans 2>&1 | tee -a $(LOG_FILE)
 	@echo "$(YELLOW)Volumes preserved. Use 'make fclean' to remove data.$(RESET)"
 
-# Clean specific service (project-scoped)
+# Clean specific service
 clean-%:
 	@echo "$(RED)Cleaning $* service ($(PROJECT) only).$(RESET)"
-	$(COMPOSE) rm -sf $*
+	$(call get_compose_cmd,$*) rm -sf $*
 	@docker rmi $*:rcheong 2>/dev/null || echo "No $* image to remove"
 
-# Full clean including volumes (project-scoped only)
+# Full clean including volumes
 fclean:
 	@echo "$(RED)WARNING: This will delete $(PROJECT) data only!$(RESET)"
 	@echo "$(RED)Project data locations:$(RESET)"
@@ -349,7 +354,8 @@ help:
 	@echo "  make fclean           # Remove everything including data"
 	@echo "  make clean-images     # Remove project images only"
 	@echo ""
-	@echo "$(YELLOW)Available Services:$(RESET) mariadb, nginx, wordpress, redis"
+	@echo "$(YELLOW)Available Services:$(RESET) mariadb, nginx, wordpress, redis, adminer, ftp"
+	@echo "$(YELLOW)Note:$(RESET) All SERVICE commands auto-detect core vs bonus services"
 
 # Complete project rebuild  
 re: clean all
@@ -358,23 +364,9 @@ re: clean all
 # PHONY DECLARATIONS
 #=============================================================================
 
-.PHONY: all setup build up down restart start stop status watch logs save-logs archive-logs \
-        clean fclean clean-images create-dirs create-logs info services help re \
-        ng mdb wp rd ad ftp \
-        $(addprefix build-, $(ALL_SERVICES)) \
-        $(addprefix up-, $(ALL_SERVICES)) \
-        $(addprefix down-, $(ALL_SERVICES)) \
-        $(addprefix restart-, $(ALL_SERVICES)) \
-        $(addprefix start-, $(ALL_SERVICES)) \
-        $(addprefix stop-, $(ALL_SERVICES)) \
-        $(addprefix rebuild-, $(ALL_SERVICES)) \
-        $(addprefix redeploy-, $(ALL_SERVICES)) \
-        $(addprefix status-, $(ALL_SERVICES)) \
-        $(addprefix watch-, $(ALL_SERVICES)) \
-        $(addprefix logs-, $(ALL_SERVICES)) \
-        $(addprefix shell-, $(ALL_SERVICES)) \
-        $(addprefix exec-, $(ALL_SERVICES)) \
-        $(addprefix clean-, $(ALL_SERVICES))
+.PHONY: all setup build build-bonus build-all up up-bonus up-all down restart start stop \
+        status watch logs save-logs archive-logs clean fclean clean-images create-dirs \
+        create-logs info services help re ng mdb wp rd ad ftp
 
 #=============================================================================
 # QUICK REFERENCE
@@ -385,7 +377,7 @@ re: clean all
 # QUICK COMMANDS:
 # make up-wordpress      # Build and start only WordPress 
 # make rebuild-mariadb   # Rebuild MariaDB from scratch
-# make logs-nginx		# View Nginx logs
+# make logs-nginx        # View Nginx logs
 # make shell-redis       # Open Redis shell
 # make status            # Show all service status  
 # make help              # Full help menu
