@@ -33,7 +33,7 @@ LOG_FILE = $(LOG_DIR)/inception_$(TIMESTAMP).logs
 
 # Services
 CORE_SERVICES = mariadb wordpress nginx
-BONUS_SERVICES = redis adminer ftp
+BONUS_SERVICES = redis adminer ftp portainer portfolio
 ALL_SERVICES = $(CORE_SERVICES) $(BONUS_SERVICES)
 
 # Service-specific compose
@@ -220,11 +220,11 @@ shell-%:
 	@docker exec -it $(PROJECT)-$* bash || docker exec -it $(PROJECT)-$* sh
 
 # Quick shell aliases
-ng: 
-	@$(MAKE) --no-print-directory shell-nginx
-
 mdb:
 	@$(MAKE) --no-print-directory shell-mariadb
+
+ng:
+	@$(MAKE) --no-print-directory shell-nginx
 
 wp:
 	@$(MAKE) --no-print-directory shell-wordpress
@@ -237,6 +237,12 @@ ad:
 
 ftp:
 	@$(MAKE) --no-print-directory shell-ftp
+
+pt:
+	@$(MAKE) --no-print-directory shell-portainer
+
+fo:
+	@$(MAKE) --no-print-directory shell-portfolio
 
 # Execute commands in containers
 exec-%:
@@ -268,6 +274,7 @@ fclean:
 	@echo "  - MariaDB: $(DB_DATA)"  
 	@echo "  - Redis: $(RD_DATA)"
 	@echo "  - Adminer: $(AD_DATA)"
+	@echo "  - Portainer: $(PT_DATA)"
 	@echo ""
 	@read -p "Type 'DELETE' to confirm: " confirm && [ "$confirm" = "DELETE" ] || (echo "Aborted." && exit 1)
 	@echo "$(RED)Removing $(PROJECT) containers, networks, and volumes...$(RESET)" | tee -a $(LOG_FILE)
@@ -291,7 +298,7 @@ clean-images:
 # Create necessary directories
 create-dirs:
 	@echo "$(BLUE)Creating data directories.$(RESET)"
-	@mkdir -p $(WP_DATA) $(DB_DATA) $(RD_DATA) $(AD_DATA)
+	@mkdir -p $(WP_DATA) $(DB_DATA) $(RD_DATA) $(AD_DATA) $(PT_DATA)
 
 # Create log directory
 create-logs:
@@ -311,6 +318,7 @@ info:
 	@echo "MariaDB: $(DB_DATA)"
 	@echo "Redis: $(RD_DATA)"
 	@echo "Adminer: $(AD_DATA)"
+	@echo "Portainer: $(PT_DATA)"
 	@echo ""
 	@echo "$(CYAN)=== Log Files ===$(RESET)"
 	@echo "Current: $(LOG_FILE)"
@@ -348,7 +356,6 @@ help:
 	@echo ""
 	@echo "$(YELLOW)Debug:$(RESET)"
 	@echo "  make shell-SERVICE    # Open shell in container"
-	@echo "  make ng/mdb/wp/rd     # Quick shell access"
 	@echo ""
 	@echo "$(YELLOW)Cleanup:$(RESET)"
 	@echo "  make clean            # Remove containers (keep data)"
@@ -367,7 +374,7 @@ re: clean all
 
 .PHONY: all setup build build-bonus build-all up up-bonus up-all down restart start stop \
         status watch logs save-logs archive-logs clean fclean clean-images create-dirs \
-        create-logs info services help re ng mdb wp rd ad ftp
+        create-logs info services help re ng mdb wp rd ad ftp pt fo
 
 #=============================================================================
 # QUICK REFERENCE
