@@ -616,6 +616,4 @@ The Inception project provides a comprehensive introduction to containerisation,
 
 ---
 
-*Last updated: $(date +"%Y-%m-%d")*
-
 **Project Status**: ✅ Production Ready | 🔒 Security Audited | 📊 Performance Optimised
