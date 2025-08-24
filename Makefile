@@ -148,7 +148,7 @@ status:
 	@$(COMPOSE) ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 	@echo ""
 	@echo "$(CYAN)=== Health Status ===$(RESET)"
-	@for service in $(SERVICES); do \
+	@for service in $(ALL_SERVICES); do \
 		health=$$(docker inspect --format='{{.State.Health.Status}}' $(PROJECT)-$$service 2>/dev/null || echo "no-health-check"); \
 		if [ "$$health" = "healthy" ]; then \
 			echo "$(GREEN)✓ $$service: $$health$(RESET)"; \
@@ -198,7 +198,7 @@ save-log:
 archive-log:
 	@echo "$(BLUE)Archiving logs...$(RESET)"
 	@mkdir -p $(LOG_DIR)/archive
-	@for service in $(SERVICES); do \
+	@for service in $(ALL_SERVICES); do \
 		$(COMPOSE) logs $$service > $(LOG_DIR)/archive/$${service}_$(TIMESTAMP).log 2>/dev/null || true; \
 	done
 	@echo "$(GREEN)Logs archived to $(LOG_DIR)/archive/$(RESET)"
@@ -264,7 +264,7 @@ fclean:
 # Remove only project-specific images
 clean-images:
 	@echo "$(YELLOW)Removing $(PROJECT) images only.$(RESET)"
-	@for service in $(SERVICES); do \
+	@for service in $(ALL_SERVICES); do \
 		docker rmi $service:rcheong 2>/dev/null || true; \
 		docker rmi $(PROJECT)-$service 2>/dev/null || true; \
 	done
