@@ -24,6 +24,7 @@ TIMESTAMP  := $(shell date +%Y%m%d_%H%M%S)
 WP_DATA = $(DATA_PATH)/wordpress
 DB_DATA = $(DATA_PATH)/mariadb
 RD_DATA = $(DATA_PATH)/redis
+AD_DATA = $(DATA_PATH)/adminer
 
 # Log directory
 LOG_DIR = ./logs
@@ -225,6 +226,12 @@ wp:
 rd:
 	@$(MAKE) --no-print-directory shell-redis
 
+ad:
+	@$(MAKE) --no-print-directory shell-adminer
+
+ftp:
+	@$(MAKE) --no-print-directory shell-ftp
+
 # Execute commands in containers
 exec-%:
 	@echo "$(CYAN)Executing command in $* container.$(RESET)"
@@ -254,6 +261,7 @@ fclean:
 	@echo "  - WordPress: $(WP_DATA)"
 	@echo "  - MariaDB: $(DB_DATA)"  
 	@echo "  - Redis: $(RD_DATA)"
+	@echo "  - Adminer: $(AD_DATA)"
 	@echo ""
 	@read -p "Type 'DELETE' to confirm: " confirm && [ "$confirm" = "DELETE" ] || (echo "Aborted." && exit 1)
 	@echo "$(RED)Removing $(PROJECT) containers, networks, and volumes...$(RESET)" | tee -a $(LOG_FILE)
@@ -277,7 +285,7 @@ clean-images:
 # Create necessary directories
 create-dirs:
 	@echo "$(BLUE)Creating data directories.$(RESET)"
-	@mkdir -p $(WP_DATA) $(DB_DATA) $(RD_DATA)
+	@mkdir -p $(WP_DATA) $(DB_DATA) $(RD_DATA) $(AD_DATA)
 
 # Create log directory
 create-logs:
@@ -296,6 +304,7 @@ info:
 	@echo "WordPress: $(WP_DATA)"
 	@echo "MariaDB: $(DB_DATA)"
 	@echo "Redis: $(RD_DATA)"
+	@echo "Adminer: $(AD_DATA)"
 	@echo ""
 	@echo "$(CYAN)=== Log Files ===$(RESET)"
 	@echo "Current: $(LOG_FILE)"
