@@ -262,26 +262,26 @@ The Inception project demonstrates a complete containerised web application infr
 sudo apt update
 sudo apt install -y curl wget git vim build-essentials
 
+# Add docker repo to apt sources:
 sudo apt install ca-certificates
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-# Add the repo to apt sources:
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt-get update
 
+# Install docker and verify installation
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# Verify installation
 docker --version
 docker compose version
 ```
 
-### Domain Configuration
+### Domain Config
 
 Add these entries to `/etc/hosts` file:
 ```bash
@@ -341,7 +341,7 @@ FTP_USER=ftpuser
 FTP_PASSWORD=your_ftp_password
 ```
 
-### 3. SSL Certificate Generation
+### 3. SSL Cert Generation
 
 ```bash
 # Create SSL directory
