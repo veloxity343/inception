@@ -1,0 +1,64 @@
+# docker-compose.bonus.yml - Bonus services extension
+volumes:
+  redis:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH}/redis
+  adminer:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_PATH}/adminer
+
+services:
+  redis:
+    image: redis:rcheong
+    container_name: inception-redis
+    build:
+      context: ./requirements/bonus/redis
+      dockerfile: Dockerfile
+    volumes:
+      - redis:/var/lib/redis
+    networks:
+      - inception
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  adminer:
+    image: adminer:rcheong
+    container_name: inception-adminer
+    build:
+      context: ./requirements/bonus/adminer
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    depends_on:
+      - mariadb
+    networks:
+      - inception
+    restart: unless-stopped
+
+  ftp:
+    image: ftp:rcheong
+    container_name: inception-ftp
+    build:
+      context: ./requirements/bonus/ftp
+      dockerfile: Dockerfile
+    ports:
+      - "21:21"
+      - "20000-20010:20000-20010"
+    volumes:
+      - wordpress:/var/ftp/wordpress
+    environment:
+      - FTP_USER=ftpuser
+      - FTP_PASS=ftppass
+    networks:
+      - inception
+    restart: unless-stopped

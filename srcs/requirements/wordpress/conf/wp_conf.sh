@@ -92,6 +92,29 @@ setup_wp() {
     chown -R www-data:www-data /var/www/wordpress
 }
 
+#=== Redis Cache Setup ===
+setup_redis() {
+    if nc -z redis 6379 2>/dev/null; then
+        echo "Redis detected, enabling cache..."
+        wp plugin install redis-cache --activate --allow-root
+
+        echo "Configuring WordPress to use Redis..."
+        
+        wp config set WP_REDIS_HOST 'redis' --allow-root
+        wp config set WP_REDIS_PORT 6379 --allow-root
+        wp config set WP_REDIS_DATABASE 0 --allow-root
+        wp config set WP_REDIS_TIMEOUT 1 --allow-root
+        wp config set WP_REDIS_READ_TIMEOUT 1 --allow-root
+        
+        # Enable Redis object cache
+        wp redis enable --allow-root
+        
+        echo "Redis cache configured successfully!"
+    else
+        echo "Redis not available, skipping cache setup"
+    fi
+}
+
 #=== PHP-FPM Configuration ===
 config_php_fpm() {
     echo "Configuring PHP 8.2-FPM..."
@@ -109,6 +132,7 @@ config_php_fpm() {
 main() {
     wait_for_db
     setup_wp
+    setup_redis
     config_php_fpm
     
     echo "Starting PHP 8.2-FPM server..."
