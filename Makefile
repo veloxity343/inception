@@ -15,7 +15,7 @@ PROJECT = inception
 COMPOSE = docker compose -p $(PROJECT) -f ./srcs/docker-compose.yml
 COMPOSE_BONUS = docker compose -p $(PROJECT) -f ./srcs/docker-compose.yml -f ./srcs/docker-compose.bonus.yml
 
-# Environment detection
+# Environment
 LOGIN_NAME := $(shell whoami)
 UNAME_S    := $(shell uname -s)
 TIMESTAMP  := $(shell date +%Y%m%d_%H%M%S)
@@ -30,7 +30,7 @@ AD_DATA = $(DATA_PATH)/adminer
 LOG_DIR = ./logs
 LOG_FILE = $(LOG_DIR)/inception_$(TIMESTAMP).logs
 
-# Service definitions
+# Services
 CORE_SERVICES = mariadb wordpress nginx
 BONUS_SERVICES = redis adminer ftp
 ALL_SERVICES = $(CORE_SERVICES) $(BONUS_SERVICES)
@@ -41,7 +41,7 @@ $(if $(filter $1,$(BONUS_SERVICES)),$(COMPOSE_BONUS),$(COMPOSE))
 endef
 
 #=============================================================================
-# MAIN TARGETS
+# BUILD AND START
 #=============================================================================
 
 # Default target
@@ -91,7 +91,7 @@ up-%: build-%
 	@$(MAKE) --no-print-directory status-$*
 
 #=============================================================================
-# SPECIFIC SERVICES
+# LIFECYCLE COMMANDS
 #=============================================================================
 
 # Global service management
@@ -210,7 +210,7 @@ archive-logs:
 	@echo "$(GREEN)Logs archived to $(LOG_DIR)/archive/$(RESET)"
 
 #=============================================================================
-# DEBUG AND SHELL ACCESS
+# DEBUGGING AND SHELL ACCESS
 #=============================================================================
 
 # Interactive shells
