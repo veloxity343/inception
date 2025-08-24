@@ -1,8 +1,6 @@
 # inception
 You mustn't be afraid to dream a little bigger
 
-# Inception Project - Complete Docker Infrastructure Guide
-
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Docker Compose](https://img.shields.io/badge/Docker_Compose-0db7ed?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![NGINX](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)](https://nginx.org/)
@@ -51,7 +49,7 @@ Containers are lightweight, portable, and self-sufficient units that package an 
 │  Libs   │  Libs   │  Libs           │  Libs   │  Libs   │  Libs           │
 ├─────────┼─────────┼─────────────────┼─────────┼─────────┼─────────────────┤
 │ Guest   │ Guest   │ Guest           │      Container Runtime              │
-│ OS      │ OS      │ OS              │      (Docker Engine)               │
+│ OS      │ OS      │ OS              │      (Docker Engine)                │
 ├─────────┴─────────┴─────────────────┼─────────────────────────────────────┤
 │        Hypervisor                   │         Host OS                     │
 ├─────────────────────────────────────┼─────────────────────────────────────┤
@@ -115,7 +113,7 @@ Docker images are built in layers:
      │        docker start        │                             │
      └────────────────────────────┘                             │
      │                                                          │
-     │                      docker rm                          │
+     │                      docker rm                           │
      └──────────────────────────────────────────────────────────┘
 ```
 
@@ -168,9 +166,9 @@ Host OS (Windows/macOS) → VM (Linux) → Docker Containers
 
 | Use Case | CPU | RAM | Storage | OS |
 |----------|-----|-----|---------|-----|
-| Development | 2-4 cores | 4-8 GB | 20-40 GB | Ubuntu 22.04 LTS |
-| Testing | 4-8 cores | 8-16 GB | 40-80 GB | Ubuntu 22.04 LTS |
-| Production-like | 8+ cores | 16+ GB | 100+ GB | Ubuntu 22.04 LTS |
+| Development | 2-4 cores | 4-8 GB | 20-40 GB | Debian |
+| Testing | 4-8 cores | 8-16 GB | 40-80 GB | Debian |
+| Production-like | 8+ cores | 16+ GB | 100+ GB | Debian |
 
 ---
 
@@ -223,7 +221,7 @@ inception/
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        Docker Host (VM)                            │
+│                        Docker Host (VM)                             │
 ├─────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────────┐  │
 │  │   Client    │    │   NGINX     │    │      WordPress          │  │
@@ -241,15 +239,15 @@ inception/
 │                                                                     │
 │  ┌─────────────────────────────────────────────────────────────┐    │
 │  │                    Docker Networks                          │    │
-│  │  - inception_network (bridge)                              │    │
+│  │  - inception_network (bridge)                               │    │
 │  │  - Service discovery and communication                      │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 │                                                                     │
 │  ┌─────────────────────────────────────────────────────────────┐    │
 │  │                    Docker Volumes                           │    │
-│  │  - wordpress_data: /var/www/html                           │    │
-│  │  - mariadb_data: /var/lib/mysql                            │    │
-│  │  - redis_data: /data                                       │    │
+│  │  - wordpress_data: /var/www/html                            │    │
+│  │  - mariadb_data: /var/lib/mysql                             │    │
+│  │  - redis_data: /data                                        │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -268,7 +266,7 @@ inception/
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                   inception_network                         │
-│                     (172.20.0.0/16)                        │
+│                     (172.20.0.0/16)                         │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
 │  │   NGINX     │  │ WordPress   │  │      MariaDB        │  │
@@ -297,7 +295,7 @@ inception/
 - Virtualization support (Intel VT-x / AMD-V)
 
 **Virtual Machine:**
-- Linux distribution (Ubuntu 22.04 LTS recommended)
+- Linux distribution (Debian recommended)
 - 4GB+ RAM allocated
 - 2+ CPU cores allocated
 - 30GB+ storage allocated
@@ -988,7 +986,7 @@ on:
     
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       - uses: actions/checkout@v2
       - name: Build and deploy
@@ -1605,16 +1603,6 @@ The Inception project provides a comprehensive introduction to containerization,
 5. **Monitoring and Observability**: Implement comprehensive monitoring from day one
 6. **Documentation**: Maintain clear, up-to-date documentation for your infrastructure
 
-### Next Steps
-
-To continue your containerization journey:
-
-1. **Explore Kubernetes**: Learn container orchestration at scale
-2. **Study Service Mesh**: Implement advanced networking with Istio or Linkerd
-3. **Practice GitOps**: Automate deployments with ArgoCD or Flux
-4. **Learn Observability**: Master Prometheus, Grafana, and distributed tracing
-5. **Security Deep Dive**: Study container security scanning and runtime protection
-
 ### Resources
 
 - [Docker Official Documentation](https://docs.docker.com/)
@@ -1622,19 +1610,6 @@ To continue your containerization journey:
 - [Container Security Best Practices](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
 - [CNCF Landscape](https://landscape.cncf.io/)
-
----
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- 42 School for the project framework
-- Docker community for excellent documentation
-- Open source maintainers of all used technologies
-- Contributors who helped improve this documentation
 
 ---
 
