@@ -25,6 +25,37 @@ wait_for_db() {
     exit 1
 }
 
+#=== PHP-FPM Configuration ===
+config_php_fpm() {
+    echo "Configuring PHP 8.2-FPM..."
+    
+    # Configure PHP-FPM to listen on all interfaces port 9000
+    sed -i 's|listen = /run/php/php8.2-fpm.sock|listen = 0.0.0.0:9000|' /etc/php/8.2/fpm/pool.d/www.conf
+    
+    # Additional PHP-FPM configuration for better Docker compatibility
+    echo "listen.owner = www-data" >> /etc/php/8.2/fpm/pool.d/www.conf
+    echo "listen.group = www-data" >> /etc/php/8.2/fpm/pool.d/www.conf
+    echo "listen.mode = 0660" >> /etc/php/8.2/fpm/pool.d/www.conf
+    
+    # Ensure PHP-FPM runs in foreground
+    sed -i 's|;daemonize = yes|daemonize = no|' /etc/php/8.2/fpm/php-fpm.conf
+    
+    # Configure process management
+    sed -i 's|pm.max_children = 5|pm.max_children = 20|' /etc/php/8.2/fpm/pool.d/www.conf
+    sed -i 's|pm.start_servers = 2|pm.start_servers = 3|' /etc/php/8.2/fpm/pool.d/www.conf
+    sed -i 's|pm.min_spare_servers = 1|pm.min_spare_servers = 2|' /etc/php/8.2/fpm/pool.d/www.conf
+    sed -i 's|pm.max_spare_servers = 3|pm.max_spare_servers = 4|' /etc/php/8.2/fpm/pool.d/www.conf
+    
+    # Enable error logging
+    sed -i 's|;catch_workers_output = yes|catch_workers_output = yes|' /etc/php/8.2/fpm/pool.d/www.conf
+    
+    # Ensure PHP run directory exists
+    mkdir -p /run/php
+    chown www-data:www-data /run/php
+    
+    echo "PHP 8.2-FPM configured for port 9000"
+}
+
 #=== WordPress Installation ===
 setup_wp() {
     echo "Setting up WordPress..."
@@ -242,21 +273,11 @@ setup_redis() {
     fi
 }
 
-#=== PHP-FPM Configuration ===
-config_php_fpm() {
-    echo "Configuring PHP 8.2-FPM..."
-    
-    # Configure PHP-FPM to listen on port 9000 instead of socket
-    sed -i 's|listen = /run/php/php8.2-fpm.sock|listen = 9000|' /etc/php/8.2/fpm/pool.d/www.conf
-    
-    # Ensure PHP run directory exists
-    mkdir -p /run/php
-    
-    echo "PHP 8.2-FPM configured for port 9000"
-}
-
 #=== Main Execution ===
 main() {
+    # Configure PHP-FPM FIRST before anything else
+    config_php_fpm
+    
     wait_for_db
     setup_wp
     
@@ -272,7 +293,6 @@ main() {
     fi
     
     setup_redis
-    config_php_fpm
     
     echo "Starting PHP 8.2-FPM server..."
     exec /usr/sbin/php-fpm8.2 -F
