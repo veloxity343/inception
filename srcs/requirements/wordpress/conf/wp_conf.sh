@@ -96,12 +96,19 @@ setup_wp() {
 setup_wp_content() {
     echo "Setting up WordPress content and navigation..."
     
-    # Create essential pages
+    # Skip if already set up (check for a marker)
+    if wp option get wp_content_setup_done --allow-root >/dev/null 2>&1; then
+        echo "WordPress content already set up, skipping..."
+        return 0
+    fi
+    
+    # Create essential pages only if they don't exist
     echo "Creating WordPress pages..."
     
     # About page
-    wp post create --post_type=page --post_title='About' \
-        --post_content='<h2>About This Site</h2>
+    if ! wp post list --post_type=page --name=about --format=count --allow-root | grep -q "1"; then
+        wp post create --post_type=page --post_title='About' \
+            --post_content='<h2>About This Site</h2>
 <p>Welcome to my WordPress blog! This site demonstrates a complete Docker containerization setup with multiple services.</p>
 
 <h3>Technical Architecture</h3>
@@ -114,112 +121,95 @@ setup_wp_content() {
 </ul>
 
 <p>Check out my <a href="/portfolio/">professional portfolio</a> to see my technical skills and projects!</p>' \
-        --post_status=publish --allow-root
+            --post_status=publish --allow-root
+    fi
 
     # Blog page  
-    wp post create --post_type=page --post_title='Blog' \
-        --post_content='<p>This is the blog section where I share technical insights and project updates.</p>' \
-        --post_status=publish --allow-root
+    if ! wp post list --post_type=page --name=blog --format=count --allow-root | grep -q "1"; then
+        wp post create --post_type=page --post_title='Blog' \
+            --post_content='<p>This is the blog section where I share technical insights and project updates.</p>' \
+            --post_status=publish --allow-root
+    fi
     
     # Contact page
-    wp post create --post_type=page --post_title='Contact' \
-        --post_content='<h2>Get In Touch</h2>
+    if ! wp post list --post_type=page --name=contact --format=count --allow-root | grep -q "1"; then
+        wp post create --post_type=page --post_title='Contact' \
+            --post_content='<h2>Get In Touch</h2>
 <p>Feel free to reach out for collaboration or technical discussions!</p>
 
 <p><strong>Email:</strong> ryan.cheongtl@gmail.com</p>
 <p><strong>GitHub:</strong> Coming soon...</p>
 <p><strong>Professional Portfolio:</strong> <a href="/portfolio/">View Resume</a></p>' \
-        --post_status=publish --allow-root
+            --post_status=publish --allow-root
+    fi
 
-    # Create sample blog posts
-    echo "Creating sample blog posts..."
+    # Create sample blog posts only if none exist
+    POST_COUNT=$(wp post list --post_type=post --format=count --allow-root)
+    if [ "$POST_COUNT" -eq 1 ]; then  # Only default "Hello World" post
+        echo "Creating sample blog posts..."
+        
+        wp post create --post_title='Docker Inception Project Complete!' \
+            --post_content='<p>Successfully completed the Docker Inception project with a full containerized infrastructure.</p>' \
+            --post_status=publish --post_category=1 --allow-root
+
+        wp post create --post_title='WordPress with Redis Caching' \
+            --post_content='<p>Implemented Redis object caching for WordPress to improve performance.</p>' \
+            --post_status=publish --post_category=1 --allow-root
+    fi
     
-    wp post create --post_title='Docker Inception Project Complete!' \
-        --post_content='<p>Successfully completed the Docker Inception project with a full containerized infrastructure:</p>
-
-<h3>Core Services</h3>
-<ul>
-<li>Nginx reverse proxy with SSL</li>
-<li>WordPress CMS with PHP-FPM</li>  
-<li>MariaDB database</li>
-</ul>
-
-<h3>Bonus Services</h3>
-<ul>
-<li>Redis caching for WordPress</li>
-<li>FTP server for file management</li>
-<li>Adminer for database administration</li>
-<li>Portainer for container management</li>
-<li>Static portfolio site (Node.js)</li>
-</ul>
-
-<p>Check out the technical details in my <a href="/portfolio/">portfolio</a>!</p>' \
-        --post_status=publish --post_category=1 --allow-root
-
-    wp post create --post_title='WordPress with Redis Caching' \
-        --post_content='<p>Implemented Redis object caching for WordPress to improve performance:</p>
-
-<ul>
-<li>Redis server running in dedicated container</li>
-<li>WordPress Redis plugin automatically configured</li>
-<li>Significant performance improvements for dynamic content</li>
-</ul>
-
-<p>The setup demonstrates proper service orchestration with Docker Compose.</p>' \
-        --post_status=publish --post_category=1 --allow-root
-    
+    # Set marker to avoid re-running
+    wp option add wp_content_setup_done "1" --allow-root
     echo "WordPress content created successfully!"
 }
 
-#=== WordPress Navigation ===
+#=== WordPress Navigation Setup ===
 setup_wp_navigation() {
     echo "Setting up WordPress navigation menu..."
     
-    # Create main navigation menu
-    wp menu create "Main Navigation" --allow-root
+    # Skip if already set up
+    if wp menu list --format=count --allow-root | grep -q -v "0"; then
+        echo "Navigation menu already exists, skipping..."
+        return 0
+    fi
+    
+    # Create main navigation menu with unique name
+    MENU_NAME="Main-Nav-$(date +%s)"
+    wp menu create "$MENU_NAME" --allow-root
     
     # Get the menu ID
     MENU_ID=$(wp menu list --format=ids --allow-root | head -1)
     
-    # Add pages to menu
-    echo "Adding pages to navigation menu..."
-    
-    # Home
-    wp menu item add-custom "$MENU_ID" "Home" "/" --allow-root
-    
-    # About  
-    ABOUT_ID=$(wp post list --post_type=page --name=about --format=ids --allow-root)
-    wp menu item add-post "$MENU_ID" "$ABOUT_ID" --allow-root
-    
-    # Blog
-    BLOG_ID=$(wp post list --post_type=page --name=blog --format=ids --allow-root)  
-    wp menu item add-post "$MENU_ID" "$BLOG_ID" --allow-root
-    
-    # Portfolio (external link to static site)
-    wp menu item add-custom "$MENU_ID" "Portfolio" "/portfolio/" --allow-root
-    
-    # Contact
-    CONTACT_ID=$(wp post list --post_type=page --name=contact --format=ids --allow-root)
-    wp menu item add-post "$MENU_ID" "$CONTACT_ID" --allow-root
-    
-    # Assign menu to primary location
-    wp menu location assign "$MENU_ID" primary --allow-root
-    
-    echo "Navigation menu configured successfully!"
+    if [ -n "$MENU_ID" ]; then
+        echo "Adding pages to navigation menu..."
+        
+        # Add menu items (ignore errors)
+        wp menu item add-custom "$MENU_ID" "Home" "/" --allow-root || true
+        wp menu item add-custom "$MENU_ID" "Portfolio" "/portfolio/" --allow-root || true
+        
+        echo "Navigation menu configured successfully!"
+    fi
 }
 
 #=== WordPress Theme Setup ===  
 setup_wp_theme() {
     echo "Configuring WordPress theme..."
     
+    # Skip if already configured
+    if wp option get wp_theme_setup_done --allow-root >/dev/null 2>&1; then
+        echo "WordPress theme already configured, skipping..."
+        return 0
+    fi
+    
     # Install and activate a modern theme (Twenty Twenty-Four)
-    wp theme install twentytwentyfour --activate --allow-root || echo "Theme already exists"
+    wp theme install twentytwentyfour --activate --allow-root 2>/dev/null || echo "Theme already exists"
     
     # Set up basic customization
     wp option update blogdescription "Docker Inception Project - Full Stack Development" --allow-root
     wp option update start_of_week 1 --allow-root
     wp option update timezone_string "Asia/Kuala_Lumpur" --allow-root
     
+    # Set marker
+    wp option add wp_theme_setup_done "1" --allow-root
     echo "WordPress theme configured!"
 }
 
@@ -227,20 +217,26 @@ setup_wp_theme() {
 setup_redis() {
     if nc -z redis 6379 2>/dev/null; then
         echo "Redis detected, enabling cache..."
-        wp plugin install redis-cache --activate --allow-root
+        
+        # Check if plugin already installed
+        if ! wp plugin is-installed redis-cache --allow-root; then
+            wp plugin install redis-cache --activate --allow-root
 
-        echo "Configuring WordPress to use Redis..."
-        
-        wp config set WP_REDIS_HOST 'redis' --allow-root
-        wp config set WP_REDIS_PORT 6379 --allow-root
-        wp config set WP_REDIS_DATABASE 0 --allow-root
-        wp config set WP_REDIS_TIMEOUT 1 --allow-root
-        wp config set WP_REDIS_READ_TIMEOUT 1 --allow-root
-        
-        # Enable Redis object cache
-        wp redis enable --allow-root
-        
-        echo "Redis cache configured successfully!"
+            echo "Configuring WordPress to use Redis..."
+            
+            wp config set WP_REDIS_HOST 'redis' --allow-root
+            wp config set WP_REDIS_PORT 6379 --allow-root
+            wp config set WP_REDIS_DATABASE 0 --allow-root
+            wp config set WP_REDIS_TIMEOUT 1 --allow-root
+            wp config set WP_REDIS_READ_TIMEOUT 1 --allow-root
+            
+            # Enable Redis object cache
+            wp redis enable --allow-root || echo "Redis cache already enabled"
+            
+            echo "Redis cache configured successfully!"
+        else
+            echo "Redis cache already installed and configured"
+        fi
     else
         echo "Redis not available, skipping cache setup"
     fi
@@ -263,9 +259,18 @@ config_php_fpm() {
 main() {
     wait_for_db
     setup_wp
-    setup_wp_content
-    setup_wp_navigation
-    setup_wp_theme 
+    
+    # Only run content setup on first run or if forced
+    if [ "${FORCE_WP_SETUP:-false}" = "true" ] || ! wp option get wp_initial_setup_done --allow-root >/dev/null 2>&1; then
+        setup_wp_content
+        setup_wp_navigation  
+        setup_wp_theme
+        wp option add wp_initial_setup_done "1" --allow-root
+        echo "Initial WordPress setup completed!"
+    else
+        echo "WordPress already fully configured, skipping content setup"
+    fi
+    
     setup_redis
     config_php_fpm
     
