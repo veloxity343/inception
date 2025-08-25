@@ -38,6 +38,24 @@ services:
       retries: 5
       start_period: 30s
 
+  nginx:
+    image: nginx:rcheong
+    container_name: inception-nginx
+    build:
+      context: ./requirements/nginx
+      dockerfile: Dockerfile
+    ports:
+      - "443:443"
+    depends_on:
+      - wordpress
+    volumes:
+      - wordpress:/var/www/wordpress
+    env_file:
+      - .env
+    networks:
+      - inception
+    restart: unless-stopped
+
   wordpress:
     image: wordpress:rcheong
     container_name: inception-wordpress
@@ -54,22 +72,4 @@ services:
     networks:
       - inception
     restart: unless-stopped
-
-  nginx:
-    image: nginx:rcheong
-    container_name: inception-nginx
-    build:
-      context: ./requirements/nginx
-      dockerfile: Dockerfile
-    ports:
-      - "443:443"
-    depends_on:
-      wordpress:
-        condition: service_healthy
-    volumes:
-      - wordpress:/var/www/wordpress
-    env_file:
-      - .env
-    networks:
-      - inception
-    restart: unless-stopped
+    
