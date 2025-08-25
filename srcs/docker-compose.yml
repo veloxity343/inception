@@ -55,11 +55,11 @@ services:
       - inception
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "ps aux | grep '[p]hp-fpm8.2' || exit 1"]
+      test: ["CMD-SHELL", "pgrep php-fpm > /dev/null"]
       interval: 10s
       timeout: 5s
       retries: 3
-      start_period: 30s
+      start_period: 45s
 
   nginx:
     image: nginx:rcheong
