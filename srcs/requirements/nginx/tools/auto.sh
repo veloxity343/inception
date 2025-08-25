@@ -17,15 +17,15 @@ chmod 644 /etc/nginx/ssl/nginx.crt
 
 echo "SSL certificate generated successfully for ${DOMAIN_NAME}"
 
-# Test NGINX config
-echo "Testing NGINX configuration..."
-nginx -t
+# # Test NGINX config
+# echo "Testing NGINX configuration..."
+# nginx -t
 
-echo "Waiting for WordPress PHP-FPM..."
-until nc -z wordpress 9000; do
-  sleep 1
-done
-echo "WordPress is ready, starting nginx..."
+# echo "Waiting for WordPress PHP-FPM..."
+# until nc -z wordpress 9000; do
+#   sleep 1
+# done
+# echo "WordPress is ready, starting nginx..."
 
 # Start NGINX in foreground
 echo "Starting NGINX server on port 443 (HTTPS)"
