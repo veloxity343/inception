@@ -250,13 +250,22 @@ setup_redis() {
 config_php_fpm() {
     echo "Configuring PHP 8.2-FPM..."
     
-    # Configure PHP-FPM to listen on port 9000 instead of socket
-    sed -i 's|listen = /run/php/php8.2-fpm.sock|listen = 9000|' /etc/php/8.2/fpm/pool.d/www.conf
+    # Fix ownership and permissions first
+    chown -R www-data:www-data /var/www/wordpress
     
-    # Ensure PHP run directory exists
+    # Configure PHP-FPM pool
+    sed -i 's|listen = /run/php/php8.2-fpm.sock|listen = 0.0.0.0:9000|' /etc/php/8.2/fpm/pool.d/www.conf
+    sed -i 's|;listen.owner = www-data|listen.owner = www-data|' /etc/php/8.2/fpm/pool.d/www.conf
+    sed -i 's|;listen.group = www-data|listen.group = www-data|' /etc/php/8.2/fpm/pool.d/www.conf
+    
+    # Ensure PHP run directory exists with proper permissions
     mkdir -p /run/php
+    chown www-data:www-data /run/php
     
-    echo "PHP 8.2-FPM configured for port 9000"
+    # Test PHP-FPM config
+    php-fpm8.2 -t
+    
+    echo "PHP 8.2-FPM configured successfully"
 }
 
 #=== Main Execution ===
@@ -266,7 +275,20 @@ main() {
     setup_redis
     config_php_fpm
     
-    echo "Starting PHP 8.2-FPM server..."
+    # Ensure WordPress is fully ready
+    echo "Verifying WordPress installation..."
+    cd /var/www/wordpress
+    
+    if ! wp core is-installed --allow-root; then
+        echo "ERROR: WordPress installation failed!"
+        exit 1
+    fi
+    
+    # Final permission check
+    chown -R www-data:www-data /var/www/wordpress
+    chmod -R 755 /var/www/wordpress
+    
+    echo "WordPress ready, starting PHP-FPM..."
     exec /usr/sbin/php-fpm8.2 -F
 }
 

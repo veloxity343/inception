@@ -47,7 +47,8 @@ services:
     ports:
       - "443:443"
     depends_on:
-      - wordpress
+      wordpress:
+        condition: service_healthy
     volumes:
       - wordpress:/var/www/wordpress
     env_file:
@@ -72,4 +73,9 @@ services:
     networks:
       - inception
     restart: unless-stopped
-    
+    healthcheck:
+      test: ["CMD", "php-fpm8.2", "-t"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
