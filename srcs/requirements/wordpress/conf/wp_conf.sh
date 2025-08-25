@@ -94,6 +94,15 @@ setup_wp() {
 
 #=== WordPress Content Setup ===
 setup_wp_content() {
+    echo "Checking if WordPress content already exists..."
+    
+    # Check if our custom pages already exist
+    ABOUT_EXISTS=$(wp post list --post_type=page --name=about --format=count --allow-root)
+    if [ "$ABOUT_EXISTS" -gt 0 ]; then
+        echo "WordPress content already exists, skipping content creation"
+        return 0
+    fi
+    
     echo "Setting up WordPress content and navigation..."
     
     # Create essential pages
