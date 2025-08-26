@@ -94,24 +94,24 @@ setup_wp() {
 
 #=== WordPress Content Setup ===
 setup_wp_content() {
-    # echo "Checking if WordPress content already exists..."
+    echo "Checking if WordPress content already exists..."
     
-    # # Check if our custom pages already exist
-    # ABOUT_EXISTS=$(wp post list --post_type=page --name=about --format=count --allow-root)
-    # if [ "$ABOUT_EXISTS" -gt 0 ]; then
-    #     echo "WordPress content already exists, skipping content creation"
-    #     return 0
-    # fi
+    # Check if our custom pages already exist
+    ABOUT_EXISTS=$(wp post list --post_type=page --name=about --format=count --allow-root 2>/dev/null || echo "0")
+    if [ "$ABOUT_EXISTS" -gt 0 ]; then
+        echo "WordPress content already exists, skipping content creation"
+        return 0
+    fi
 
     echo "Setting up WordPress content and navigation..."
     
-    # Create essential pages
+    # Create essential pages with error handling
     echo "Creating WordPress pages..."
     
     # About page
-    wp post create --post_type=page --post_title='About' \
+    if wp post create --post_type=page --post_title='About' \
         --post_content='<h2>About This Site</h2>
-<p>Welcome to my WordPress blog! This site demonstrates a complete Docker containerization setup with multiple services.</p>
+<p>Welcome to my WordPress blog! This site demonstrates a complete Docker containerisation setup with multiple services.</p>
 
 <h3>Technical Architecture</h3>
 <ul>
@@ -123,28 +123,40 @@ setup_wp_content() {
 </ul>
 
 <p>Check out my <a href="/portfolio/">professional portfolio</a> to see my technical skills and projects!</p>' \
-        --post_status=publish --allow-root
+        --post_status=publish --allow-root; then
+        echo "✅ About page created"
+    else
+        echo "⚠️ Failed to create About page"
+    fi
 
     # Blog page  
-    wp post create --post_type=page --post_title='Blog' \
+    if wp post create --post_type=page --post_title='Blog' \
         --post_content='<p>This is the blog section where I share technical insights and project updates.</p>' \
-        --post_status=publish --allow-root
+        --post_status=publish --allow-root; then
+        echo "✅ Blog page created"  
+    else
+        echo "⚠️ Failed to create Blog page"
+    fi
     
     # Contact page
-    wp post create --post_type=page --post_title='Contact' \
+    if wp post create --post_type=page --post_title='Contact' \
         --post_content='<h2>Get In Touch</h2>
 <p>Feel free to reach out for collaboration or technical discussions!</p>
 
 <p><strong>Email:</strong> ryan.cheongtl@gmail.com</p>
 <p><strong>GitHub:</strong> Coming soon...</p>
 <p><strong>Professional Portfolio:</strong> <a href="/portfolio/">View Resume</a></p>' \
-        --post_status=publish --allow-root
+        --post_status=publish --allow-root; then
+        echo "✅ Contact page created"
+    else
+        echo "⚠️ Failed to create Contact page"
+    fi
 
     # Create sample blog posts
     echo "Creating sample blog posts..."
     
     wp post create --post_title='Docker Inception Project Complete!' \
-        --post_content='<p>Successfully completed the Docker Inception project with a full containerized infrastructure:</p>
+        --post_content='<p>Successfully completed the Docker Inception project with a full containerised infrastructure:</p>
 
 <h3>Core Services</h3>
 <ul>
@@ -163,7 +175,7 @@ setup_wp_content() {
 </ul>
 
 <p>Check out the technical details in my <a href="/portfolio/">portfolio</a>!</p>' \
-        --post_status=publish --post_category=1 --allow-root
+        --post_status=publish --post_category=1 --allow-root 2>/dev/null || echo "⚠️ Failed to create first blog post"
 
     wp post create --post_title='WordPress with Redis Caching' \
         --post_content='<p>Implemented Redis object caching for WordPress to improve performance:</p>
@@ -175,7 +187,7 @@ setup_wp_content() {
 </ul>
 
 <p>The setup demonstrates proper service orchestration with Docker Compose.</p>' \
-        --post_status=publish --post_category=1 --allow-root
+        --post_status=publish --post_category=1 --allow-root 2>/dev/null || echo "⚠️ Failed to create second blog post"
     
     echo "WordPress content created successfully!"
 }
@@ -185,36 +197,59 @@ setup_wp_navigation() {
     echo "Setting up WordPress navigation menu..."
     
     # Create main navigation menu
-    wp menu create "Main Navigation" --allow-root
+    if ! wp menu create "Main Navigation" --allow-root; then
+        echo "⚠️ Failed to create menu (may already exist)"
+        return 1
+    fi
     
-    # Get the menu ID
-    MENU_ID=$(wp menu list --format=ids --allow-root | head -1)
+    # Get the menu ID with error handling
+    MENU_ID=$(wp menu list --format=ids --allow-root 2>/dev/null | head -1)
+    if [ -z "$MENU_ID" ]; then
+        echo "❌ No menu ID found, cannot set up navigation"
+        return 1
+    fi
     
-    # Add pages to menu
+    echo "Setting up menu items for menu ID: $MENU_ID"
+    
+    # Add pages to menu with error handling
     echo "Adding pages to navigation menu..."
     
     # Home
-    wp menu item add-custom "$MENU_ID" "Home" "/" --allow-root
+    wp menu item add-custom "$MENU_ID" "Home" "/" --allow-root || echo "⚠️ Failed to add Home"
     
     # About  
-    ABOUT_ID=$(wp post list --post_type=page --name=about --format=ids --allow-root)
-    wp menu item add-post "$MENU_ID" "$ABOUT_ID" --allow-root
+    ABOUT_ID=$(wp post list --post_type=page --name=about --format=ids --allow-root 2>/dev/null | head -1)
+    if [ -n "$ABOUT_ID" ]; then
+        wp menu item add-post "$MENU_ID" "$ABOUT_ID" --allow-root || echo "⚠️ Failed to add About page"
+    else
+        echo "⚠️ About page not found for navigation"
+    fi
     
     # Blog
-    BLOG_ID=$(wp post list --post_type=page --name=blog --format=ids --allow-root)  
-    wp menu item add-post "$MENU_ID" "$BLOG_ID" --allow-root
+    BLOG_ID=$(wp post list --post_type=page --name=blog --format=ids --allow-root 2>/dev/null | head -1)
+    if [ -n "$BLOG_ID" ]; then
+        wp menu item add-post "$MENU_ID" "$BLOG_ID" --allow-root || echo "⚠️ Failed to add Blog page"
+    else
+        echo "⚠️ Blog page not found for navigation"
+    fi
     
     # Portfolio (external link to static site)
-    wp menu item add-custom "$MENU_ID" "Portfolio" "/portfolio/" --allow-root
+    wp menu item add-custom "$MENU_ID" "Portfolio" "/portfolio/" --allow-root || echo "⚠️ Failed to add Portfolio link"
     
     # Contact
-    CONTACT_ID=$(wp post list --post_type=page --name=contact --format=ids --allow-root)
-    wp menu item add-post "$MENU_ID" "$CONTACT_ID" --allow-root
+    CONTACT_ID=$(wp post list --post_type=page --name=contact --format=ids --allow-root 2>/dev/null | head -1)
+    if [ -n "$CONTACT_ID" ]; then
+        wp menu item add-post "$MENU_ID" "$CONTACT_ID" --allow-root || echo "⚠️ Failed to add Contact page"
+    else
+        echo "⚠️ Contact page not found for navigation"
+    fi
     
     # Assign menu to primary location
-    wp menu location assign "$MENU_ID" primary --allow-root
-    
-    echo "Navigation menu configured successfully!"
+    if wp menu location assign "$MENU_ID" primary --allow-root; then
+        echo "✅ Navigation menu configured successfully!"
+    else
+        echo "⚠️ Failed to assign menu to primary location"
+    fi
 }
 
 #=== WordPress Theme Setup ===  
@@ -224,7 +259,7 @@ setup_wp_theme() {
     # Install and activate a modern theme (Twenty Twenty-Four)
     wp theme install twentytwentyfour --activate --allow-root || echo "Theme already exists"
     
-    # Set up basic customization
+    # Set up basic customisation
     wp option update blogdescription "Docker Inception Project - Full Stack Development" --allow-root
     wp option update start_of_week 1 --allow-root
     wp option update timezone_string "Asia/Kuala_Lumpur" --allow-root
@@ -281,6 +316,9 @@ config_php_fpm() {
 main() {
     wait_for_db
     setup_wp
+    setup_wp_content
+    setup_wp_navigation
+    setup_wp_theme
     setup_redis
     config_php_fpm
     
