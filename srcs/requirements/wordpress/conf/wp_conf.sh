@@ -97,7 +97,7 @@ setup_wp_content() {
     echo "Checking if WordPress content already exists..."
     
     # Check if our custom pages already exist
-    ABOUT_EXISTS=$(wp post list --post_type=page --name=about --format=count --allow-root 2>/dev/null || echo "0")
+    ABOUT_EXISTS=$(wp post list --post_type=page --name=about --format=count --allow-root)
     if [ "$ABOUT_EXISTS" -gt 0 ]; then
         echo "WordPress content already exists, skipping content creation"
         return 0
@@ -105,11 +105,11 @@ setup_wp_content() {
 
     echo "Setting up WordPress content and navigation..."
     
-    # Create essential pages with error handling
+    # Create essential pages
     echo "Creating WordPress pages..."
     
     # About page
-    if wp post create --post_type=page --post_title='About' \
+    wp post create --post_type=page --post_title='About' \
         --post_content='<h2>About This Site</h2>
 <p>Welcome to my WordPress blog! This site demonstrates a complete Docker containerisation setup with multiple services.</p>
 
@@ -123,34 +123,22 @@ setup_wp_content() {
 </ul>
 
 <p>Check out my <a href="/portfolio/">professional portfolio</a> to see my technical skills and projects!</p>' \
-        --post_status=publish --allow-root; then
-        echo "✅ About page created"
-    else
-        echo "⚠️ Failed to create About page"
-    fi
+        --post_status=publish --allow-root
 
     # Blog page  
-    if wp post create --post_type=page --post_title='Blog' \
+    wp post create --post_type=page --post_title='Blog' \
         --post_content='<p>This is the blog section where I share technical insights and project updates.</p>' \
-        --post_status=publish --allow-root; then
-        echo "✅ Blog page created"  
-    else
-        echo "⚠️ Failed to create Blog page"
-    fi
+        --post_status=publish --allow-root
     
     # Contact page
-    if wp post create --post_type=page --post_title='Contact' \
+    wp post create --post_type=page --post_title='Contact' \
         --post_content='<h2>Get In Touch</h2>
 <p>Feel free to reach out for collaboration or technical discussions!</p>
 
 <p><strong>Email:</strong> ryan.cheongtl@gmail.com</p>
 <p><strong>GitHub:</strong> Coming soon...</p>
 <p><strong>Professional Portfolio:</strong> <a href="/portfolio/">View Resume</a></p>' \
-        --post_status=publish --allow-root; then
-        echo "✅ Contact page created"
-    else
-        echo "⚠️ Failed to create Contact page"
-    fi
+        --post_status=publish --allow-root
 
     # Create sample blog posts
     echo "Creating sample blog posts..."
@@ -175,7 +163,7 @@ setup_wp_content() {
 </ul>
 
 <p>Check out the technical details in my <a href="/portfolio/">portfolio</a>!</p>' \
-        --post_status=publish --post_category=1 --allow-root 2>/dev/null || echo "⚠️ Failed to create first blog post"
+        --post_status=publish --post_category=1 --allow-root
 
     wp post create --post_title='WordPress with Redis Caching' \
         --post_content='<p>Implemented Redis object caching for WordPress to improve performance:</p>
@@ -187,7 +175,7 @@ setup_wp_content() {
 </ul>
 
 <p>The setup demonstrates proper service orchestration with Docker Compose.</p>' \
-        --post_status=publish --post_category=1 --allow-root 2>/dev/null || echo "⚠️ Failed to create second blog post"
+        --post_status=publish --post_category=1 --allow-root
     
     echo "WordPress content created successfully!"
 }
@@ -197,59 +185,36 @@ setup_wp_navigation() {
     echo "Setting up WordPress navigation menu..."
     
     # Create main navigation menu
-    if ! wp menu create "Main Navigation" --allow-root; then
-        echo "⚠️ Failed to create menu (may already exist)"
-        return 1
-    fi
+    wp menu create "Main Navigation" --allow-root
     
-    # Get the menu ID with error handling
-    MENU_ID=$(wp menu list --format=ids --allow-root 2>/dev/null | head -1)
-    if [ -z "$MENU_ID" ]; then
-        echo "❌ No menu ID found, cannot set up navigation"
-        return 1
-    fi
+    # Get the menu ID
+    MENU_ID=$(wp menu list --format=ids --allow-root | head -1)
     
-    echo "Setting up menu items for menu ID: $MENU_ID"
-    
-    # Add pages to menu with error handling
+    # Add pages to menu
     echo "Adding pages to navigation menu..."
     
     # Home
-    wp menu item add-custom "$MENU_ID" "Home" "/" --allow-root || echo "⚠️ Failed to add Home"
+    wp menu item add-custom "$MENU_ID" "Home" "/" --allow-root
     
     # About  
-    ABOUT_ID=$(wp post list --post_type=page --name=about --format=ids --allow-root 2>/dev/null | head -1)
-    if [ -n "$ABOUT_ID" ]; then
-        wp menu item add-post "$MENU_ID" "$ABOUT_ID" --allow-root || echo "⚠️ Failed to add About page"
-    else
-        echo "⚠️ About page not found for navigation"
-    fi
+    ABOUT_ID=$(wp post list --post_type=page --name=about --format=ids --allow-root)
+    wp menu item add-post "$MENU_ID" "$ABOUT_ID" --allow-root
     
     # Blog
-    BLOG_ID=$(wp post list --post_type=page --name=blog --format=ids --allow-root 2>/dev/null | head -1)
-    if [ -n "$BLOG_ID" ]; then
-        wp menu item add-post "$MENU_ID" "$BLOG_ID" --allow-root || echo "⚠️ Failed to add Blog page"
-    else
-        echo "⚠️ Blog page not found for navigation"
-    fi
+    BLOG_ID=$(wp post list --post_type=page --name=blog --format=ids --allow-root)  
+    wp menu item add-post "$MENU_ID" "$BLOG_ID" --allow-root
     
     # Portfolio (external link to static site)
-    wp menu item add-custom "$MENU_ID" "Portfolio" "/portfolio/" --allow-root || echo "⚠️ Failed to add Portfolio link"
+    wp menu item add-custom "$MENU_ID" "Portfolio" "/portfolio/" --allow-root
     
     # Contact
-    CONTACT_ID=$(wp post list --post_type=page --name=contact --format=ids --allow-root 2>/dev/null | head -1)
-    if [ -n "$CONTACT_ID" ]; then
-        wp menu item add-post "$MENU_ID" "$CONTACT_ID" --allow-root || echo "⚠️ Failed to add Contact page"
-    else
-        echo "⚠️ Contact page not found for navigation"
-    fi
+    CONTACT_ID=$(wp post list --post_type=page --name=contact --format=ids --allow-root)
+    wp menu item add-post "$MENU_ID" "$CONTACT_ID" --allow-root
     
     # Assign menu to primary location
-    if wp menu location assign "$MENU_ID" primary --allow-root; then
-        echo "✅ Navigation menu configured successfully!"
-    else
-        echo "⚠️ Failed to assign menu to primary location"
-    fi
+    wp menu location assign "$MENU_ID" primary --allow-root
+    
+    echo "Navigation menu configured successfully!"
 }
 
 #=== WordPress Theme Setup ===  
@@ -316,9 +281,9 @@ config_php_fpm() {
 main() {
     wait_for_db
     setup_wp
-    setup_wp_content
-    setup_wp_navigation
-    setup_wp_theme
+    # setup_wp_content
+    # setup_wp_navigation
+    # setup_wp_theme
     setup_redis
     config_php_fpm
     
