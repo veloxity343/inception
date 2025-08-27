@@ -74,7 +74,7 @@ services:
       - inception
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "php-fpm8.2 -t && nc -z localhost 9000"]
+      test: ["CMD-SHELL", "nc -z localhost 9000 && [ -f /var/www/wordpress/.wp_ready ]"]
       interval: 10s
       timeout: 5s
       retries: 12
