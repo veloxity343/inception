@@ -366,7 +366,7 @@ help:
 	@echo "$(YELLOW)Note:$(RESET) All SERVICE commands auto-detect core vs bonus services"
 
 # Complete project rebuild  
-re: clean all
+re: clean up-all
 
 #=============================================================================
 # PHONY DECLARATIONS
