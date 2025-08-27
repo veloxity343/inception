@@ -25,53 +25,16 @@ wait_for_db() {
     exit 1
 }
 
-#=== PHP-FPM Configuration (Moved Early) ===
-config_php_fpm() {
-    echo "Configuring PHP 8.2-FPM..."
-    
-    # Create WordPress directory early
-    mkdir -p /var/www/wordpress
-    chown -R www-data:www-data /var/www/wordpress
-    
-    # Configure PHP-FPM pool
-    sed -i 's|^listen =.*|listen = 0.0.0.0:9000|' /etc/php/8.2/fpm/pool.d/www.conf
-    sed -i 's|;listen.owner = www-data|listen.owner = www-data|' /etc/php/8.2/fpm/pool.d/www.conf
-    sed -i 's|;listen.group = www-data|listen.group = www-data|' /etc/php/8.2/fpm/pool.d/www.conf
-    
-    # Ensure PHP run directory exists with proper permissions
-    mkdir -p /run/php
-    chown www-data:www-data /run/php
-    
-    # Test PHP-FPM config
-    php-fpm8.2 -t
-    
-    echo "PHP 8.2-FPM configured successfully"
-}
-
-#=== Start PHP-FPM in Background ===
-start_php_fpm_background() {
-    echo "Starting PHP-FPM in background..."
-    /usr/sbin/php-fpm8.2 &
-    PHP_FPM_PID=$!
-    
-    # Wait a moment for PHP-FPM to start
-    sleep 2
-    
-    # Verify it's running
-    if kill -0 $PHP_FPM_PID 2>/dev/null; then
-        echo "PHP-FPM started successfully (PID: $PHP_FPM_PID)"
-        return 0
-    else
-        echo "ERROR: PHP-FPM failed to start"
-        exit 1
-    fi
-}
-
 #=== WordPress Installation ===
 setup_wp() {
     echo "Setting up WordPress..."
     
-    # WordPress directory should already exist from PHP-FPM setup
+    # Create WordPress directory with proper permissions
+    mkdir -p /var/www/wordpress
+    chmod -R 755 /var/www/wordpress/
+    chown -R www-data:www-data /var/www/wordpress
+    
+    # Navigate to WordPress directory
     cd /var/www/wordpress
     
     # Download and install WP-CLI
@@ -125,7 +88,7 @@ setup_wp() {
     
     echo "WordPress installation completed!"
     
-    # Set permissions
+    # Set final permissions
     chown -R www-data:www-data /var/www/wordpress
 }
 
@@ -452,37 +415,59 @@ setup_redis() {
     fi
 }
 
+#=== PHP-FPM Configuration ===
+config_php_fpm() {
+    echo "Configuring PHP 8.2-FPM..."
+    
+    # Fix ownership and permissions first
+    chown -R www-data:www-data /var/www/wordpress
+    
+    # Configure PHP-FPM pool
+    sed -i 's|^listen =.*|listen = 0.0.0.0:9000|' /etc/php/8.2/fpm/pool.d/www.conf
+    sed -i 's|;listen.owner = www-data|listen.owner = www-data|' /etc/php/8.2/fpm/pool.d/www.conf
+    sed -i 's|;listen.group = www-data|listen.group = www-data|' /etc/php/8.2/fpm/pool.d/www.conf
+    
+    # Ensure PHP run directory exists with proper permissions
+    mkdir -p /run/php
+    chown www-data:www-data /run/php
+    
+    # Test PHP-FPM config
+    php-fpm8.2 -t
+    
+    echo "PHP 8.2-FPM configured successfully"
+}
+
 #=== Main Execution ===
 main() {
-    # 1. Wait for database
     wait_for_db
-    
-    # 2. Configure and start PHP-FPM early (in background)
-    config_php_fpm
-    start_php_fpm_background
-    
-    # 3. Now do WordPress setup while PHP-FPM is running
     setup_wp
+    setup_wp_content
+    setup_wp_navigation
+    setup_wp_theme
+    setup_redis
+    config_php_fpm
     
-    # 4. Continue with content setup (can be done in background)
-    {
-        setup_wp_content
-        setup_wp_navigation  
-        setup_wp_theme
-        setup_redis
-        echo "WordPress content setup completed in background"
-    } &
-    SETUP_PID=$!
+    # Ensure WordPress is fully ready
+    echo "Verifying WordPress installation..."
+    cd /var/www/wordpress
     
-    # 5. Final permission check
+    if ! wp core is-installed --allow-root; then
+        echo "ERROR: WordPress installation failed!"
+        exit 1
+    fi
+    
+    echo "WordPress installation verified successfully"
+    
+    # Final permission check
     echo "Setting final permissions..."
     chown -R www-data:www-data /var/www/wordpress
     chmod -R 755 /var/www/wordpress
     
-    echo "WordPress is ready! Content setup continuing in background..."
+    echo "Permissions set successfully"
+    echo "Starting PHP-FPM server..."
     
-    # 6. Wait for PHP-FPM process (foreground)
-    wait $PHP_FPM_PID
+    # Start PHP-FPM in foreground
+    exec /usr/sbin/php-fpm8.2 -F
 }
 
 # Run main function
