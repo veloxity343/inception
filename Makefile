@@ -133,9 +133,8 @@ stop-%:
 
 # Rebuild specific service
 rebuild-%: setup
-	@echo "$(PURPLE)Force rebuilding $* from scratch.$(RESET)" | tee -a $(LOG_FILE)
+	@echo "$(PURPLE)No-cache rebuilding $* from scratch.$(RESET)" | tee -a $(LOG_FILE)
 	$(call get_compose_cmd,$*) build --no-cache $* 2>&1 | tee -a $(LOG_FILE)
-	$(call get_compose_cmd,$*) up -d $* 2>&1 | tee -a $(LOG_FILE)
 	@$(MAKE) --no-print-directory status-$*
 
 # Rebuild and restart specific service
