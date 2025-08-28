@@ -3,6 +3,11 @@ set -e
 
 echo "Setting up FTP server..."
 
+# Ensure secure chroot dir exists
+mkdir -p /var/run/vsftpd/empty
+chown root:root /var/run/vsftpd/empty
+chmod 555 /var/run/vsftpd/empty
+
 # Create FTP user with password from environment
 echo "${FTP_USER}:${FTP_PASS}" | chpasswd
 echo "FTP user ${FTP_USER} configured"

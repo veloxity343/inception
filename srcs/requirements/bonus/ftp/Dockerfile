@@ -13,6 +13,11 @@ RUN mkdir -p /var/ftp/wordpress \
     && mkdir -p /var/log/vsftpd \
     && mkdir -p /etc/vsftpd
 
+# Secure chroot dir for vsftpd
+RUN mkdir -p /var/run/vsftpd/empty \
+    && chown root:root /var/run/vsftpd/empty \
+    && chmod 555 /var/run/vsftpd/empty
+
 # Copy FTP configuration
 COPY conf/vsftpd.conf /etc/vsftpd.conf
 COPY tools/ftp-setup.sh /ftp-setup.sh
