@@ -71,11 +71,6 @@ start_php_fpm_background() {
 setup_wp() {
     echo "Setting up WordPress..."
     
-    # Create WordPress directory with proper permissions
-    # mkdir -p /var/www/wordpress
-    # chmod -R 755 /var/www/wordpress/
-    # chown -R www-data:www-data /var/www/wordpress
-    
     # Navigate to WordPress directory
     cd /var/www/wordpress
     
@@ -195,7 +190,7 @@ setup_wp_content() {
 <p>Feel free to reach out for collaboration or technical discussions!</p>
 
 <p><strong>Email:</strong> ryan.cheongtl@gmail.com</p>
-<p><strong>GitHub:</strong> Coming soon...</p>
+<p><strong>GitHub:</strong> <a href="https://github.com/veloxity343">GitHub</a></p>
 <p><strong>Professional Portfolio:</strong> <a href="/portfolio/">View Resume</a></p>' \
             --post_status=publish --allow-root 2>/dev/null; then
             echo "Contact page created successfully"
@@ -475,6 +470,8 @@ main() {
     {
         sleep 5  # Give a moment for things to stabilize
         setup_wp_content
+        setup_wp_navigation
+        setup_wp_theme
         setup_redis
         echo "Background setup completed"
     } &

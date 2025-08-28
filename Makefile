@@ -104,6 +104,7 @@ down:
 down-%:
 	@echo "$(RED)Stopping $* service.$(RESET)" | tee -a $(LOG_FILE)
 	$(call get_compose_cmd,$*) stop $* 2>&1 | tee -a $(LOG_FILE)
+	@docker rm $* 2>/dev/null || true
 
 restart: down up
 
