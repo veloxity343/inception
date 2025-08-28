@@ -63,8 +63,8 @@ services:
     volumes:
       - wordpress:/var/ftp/wordpress
     environment:
-      - FTP_USER=ftpuser
-      - FTP_PASS=ftppass
+      - FTP_USER=$(FTP_USER)
+      - FTP_PASS=$(FTP_PASS)
     networks:
       - inception
     restart: unless-stopped
