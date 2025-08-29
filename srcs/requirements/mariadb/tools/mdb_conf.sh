@@ -23,10 +23,16 @@ if [ ! -d "/var/lib/mysql/mysql" ]; then
     -- Remove test database
     DROP DATABASE IF EXISTS test;
 
-    -- Create WordPress database and user
+    -- Create WordPress database and user with proper permissions
     CREATE DATABASE IF NOT EXISTS \`${MYSQL_DB}\`;
     CREATE USER IF NOT EXISTS \`${MYSQL_USER}\`@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+    CREATE USER IF NOT EXISTS \`${MYSQL_USER}\`@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}';
+    CREATE USER IF NOT EXISTS \`${MYSQL_USER}\`@'inception-wordpress.inception_inception' IDENTIFIED BY '${MYSQL_PASSWORD}';
+    
     GRANT ALL PRIVILEGES ON \`${MYSQL_DB}\`.* TO \`${MYSQL_USER}\`@'%';
+    GRANT ALL PRIVILEGES ON \`${MYSQL_DB}\`.* TO \`${MYSQL_USER}\`@'localhost';
+    GRANT ALL PRIVILEGES ON \`${MYSQL_DB}\`.* TO \`${MYSQL_USER}\`@'inception-wordpress.inception_inception';
+    
     FLUSH PRIVILEGES;
 EOSQL
 else
