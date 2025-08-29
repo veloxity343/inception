@@ -48,25 +48,6 @@ config_php_fpm() {
     echo "PHP 8.2-FPM configured successfully"
 }
 
-#=== Start PHP-FPM in Background ===
-start_php_fpm_background() {
-    echo "Starting PHP-FPM in background..."
-    /usr/sbin/php-fpm8.2 &
-    PHP_FPM_PID=$!
-    
-    # Wait a moment for PHP-FPM to start
-    sleep 2
-    
-    # Verify it's running
-    if kill -0 $PHP_FPM_PID 2>/dev/null; then
-        echo "PHP-FPM started successfully (PID: $PHP_FPM_PID)"
-        return 0
-    else
-        echo "ERROR: PHP-FPM failed to start"
-        exit 1
-    fi
-}
-
 #=== WordPress Installation ===
 setup_wp() {
     echo "Setting up WordPress..."
@@ -464,26 +445,23 @@ main() {
     
     # 3. Setup WordPress core
     setup_wp
+
+    # 4. Create ready signal
+    touch /var/www/wordpress/.wp_ready
+    echo "WordPress setup completed - ready for connections"
     
-    # 4. Start background content setup
-    echo "Starting background content setup..."
-    {
-        sleep 5  # Give a moment for things to stabilize
-        setup_wp_content
-        setup_wp_navigation
-        setup_wp_theme
-        setup_redis
-        echo "Background setup completed"
-    } &
+    # 5. Setup content
+    echo "Setting up WordPress content and configuration..."
+    setup_wp_content
+    setup_wp_navigation
+    setup_wp_theme
+    setup_redis
+    echo "WordPress content setup completed"
     
-    # 5. Final permissions
+    # 6. Final permissions
     echo "Setting final permissions..."
     chown -R www-data:www-data /var/www/wordpress
     chmod -R 755 /var/www/wordpress
-    
-    # 6. Create ready signal
-    touch /var/www/wordpress/.wp_ready
-    echo "WordPress setup completed - ready for connections"
     
     # 7. Start PHP-FPM in FOREGROUND (this was the main issue!)
     echo "Starting PHP-FPM server in foreground..."
@@ -492,7 +470,6 @@ main() {
 
 # Trap signals to ensure clean shutdown
 trap 'echo "Received shutdown signal, stopping PHP-FPM..."; killall php-fpm8.2; exit 0' SIGTERM SIGINT
-
 
 # Run main function
 main

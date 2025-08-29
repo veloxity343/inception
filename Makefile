@@ -291,6 +291,9 @@ clean-images:
 	done
 	@echo "$(GREEN)Project images cleaned$(RESET)"
 
+# Re-up all
+re: clean up-all
+
 #=============================================================================
 # UTILITY TARGETS
 #=============================================================================
@@ -330,44 +333,6 @@ services:
 	@echo "Core services: $(CORE_SERVICES)"
 	@echo "Bonus services: $(BONUS_SERVICES)"
 
-# Show help
-help:
-	@echo "$(CYAN)=== Inception Makefile Help ===$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)Main Commands:$(RESET)"
-	@echo "  make all              # Full setup and start"
-	@echo "  make up               # Build and start all services"
-	@echo "  make down             # Stop all services"  
-	@echo "  make restart          # Restart all services"
-	@echo ""
-	@echo "$(YELLOW)Service-Specific Commands:$(RESET)"
-	@echo "  make build-SERVICE    # Build specific service"
-	@echo "  make up-SERVICE       # Start specific service"
-	@echo "  make down-SERVICE     # Stop specific service"
-	@echo "  make restart-SERVICE  # Restart specific service"
-	@echo "  make rebuild-SERVICE  # Rebuild from scratch"
-	@echo "  make redeploy-SERVICE # Stop, rebuild, start"
-	@echo ""
-	@echo "$(YELLOW)Monitoring:$(RESET)"
-	@echo "  make status           # Show all service status"
-	@echo "  make logs             # Show recent logs"
-	@echo "  make watch            # Follow logs in real-time"
-	@echo "  make save-logs        # Save logs to file"
-	@echo ""
-	@echo "$(YELLOW)Debug:$(RESET)"
-	@echo "  make shell-SERVICE    # Open shell in container"
-	@echo ""
-	@echo "$(YELLOW)Cleanup:$(RESET)"
-	@echo "  make clean            # Remove containers (keep data)"
-	@echo "  make fclean           # Remove everything including data"
-	@echo "  make clean-images     # Remove project images only"
-	@echo ""
-	@echo "$(YELLOW)Available Services:$(RESET) mariadb, nginx, wordpress, redis, adminer, ftp"
-	@echo "$(YELLOW)Note:$(RESET) All SERVICE commands auto-detect core vs bonus services"
-
-# Complete project rebuild  
-re: clean up-all
-
 #=============================================================================
 # PHONY DECLARATIONS
 #=============================================================================
@@ -375,17 +340,3 @@ re: clean up-all
 .PHONY: all setup build build-bonus build-all up up-bonus up-all down restart start stop \
         status watch logs save-logs archive-logs clean fclean clean-images create-dirs \
         create-logs info services help re ng mdb wp rd ad ftp pt fo
-
-#=============================================================================
-# QUICK REFERENCE
-#=============================================================================
-
-# Uncomment for quick reference at top of file
-# 
-# QUICK COMMANDS:
-# make up-wordpress      # Build and start only WordPress 
-# make rebuild-mariadb   # Rebuild MariaDB from scratch
-# make logs-nginx        # View Nginx logs
-# make shell-redis       # Open Redis shell
-# make status            # Show all service status  
-# make help              # Full help menu
