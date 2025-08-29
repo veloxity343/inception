@@ -11,8 +11,8 @@ RUN apk update && apk upgrade \
 COPY ./conf/mdb.conf /etc/my.cnf.d/mdb.conf
 
 # Setup script
-COPY ./tools/mdb_conf.sh /usr/local/bin/mdb_conf.sh
-RUN chmod +x /usr/local/bin/mdb_conf.sh
+COPY ./tools/mdb-setup.sh /usr/local/bin/mdb-setup.sh
+RUN chmod +x /usr/local/bin/mdb-setup.sh
 
 # Ensure runtime directories
 RUN mkdir -p /run/mysqld && chown -R mysql:mysql /run/mysqld
@@ -22,5 +22,4 @@ VOLUME ["/var/lib/mysql"]
 
 EXPOSE 3306
 
-ENTRYPOINT ["/usr/local/bin/mdb_conf.sh"]
-
+ENTRYPOINT ["/usr/local/bin/mdb-setup.sh"]

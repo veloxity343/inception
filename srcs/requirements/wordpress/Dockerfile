@@ -23,7 +23,7 @@ RUN mkdir -p /var/www/wordpress \
     && adduser -D -g 'www' www \
     && chown -R www:www /var/www/wordpress
 
-# Override PHP memory limit (fix WP-CLI crashing on Alpine)
+# Override PHP memory limit
 RUN mkdir -p /etc/php83/conf.d \
     && echo "memory_limit = 512M" > /etc/php83/conf.d/99-custom.ini
 

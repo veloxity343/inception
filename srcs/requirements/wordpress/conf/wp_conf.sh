@@ -467,9 +467,9 @@ main() {
 
     # 6. Setup content
     echo "Setting up WordPress content and configuration..."
-    setup_wp_content
-    setup_wp_navigation
-    setup_wp_theme
+    # setup_wp_content
+    # setup_wp_navigation
+    # setup_wp_theme
     setup_redis
     echo "WordPress content setup completed"
     
