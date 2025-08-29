@@ -30,4 +30,4 @@ else
 fi
 
 echo "MariaDB setup complete. Starting in foreground..."
-exec mysqld_safe --user=mysql --datadir=/var/lib/mysql --port=3306 --bind-address=0.0.0.0
+exec mysqld --user=mysql --datadir=/var/lib/mysql --port=3306 --bind-address=0.0.0.0
