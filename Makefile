@@ -299,6 +299,19 @@ clean-images:
 # Re-up all
 re: clean up-all
 
+# Nuke
+nuke:
+	@echo "$(RED)WARNING: This will remove ALL Docker data!$(RESET)"
+	@echo "$(RED)This affects ALL Docker projects on this machine.$(RESET)"
+	@read -p "Type 'NUKE' to confirm: " confirm; \
+	if [ "$$confirm" = "NUKE" ]; then \
+		docker system prune -a --volumes -f; \
+		echo "$(GREEN)Docker system pruned.$(RESET)"; \
+	else \
+		echo "Aborted."; \
+		exit 1; \
+	fi
+
 #=============================================================================
 # UTILITY TARGETS
 #=============================================================================

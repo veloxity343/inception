@@ -7,15 +7,12 @@ RUN apk update && apk upgrade \
         mariadb-client \
     && rm -rf /var/cache/apk/*
 
-# Data directory
-RUN mysql_install_db --user=mysql --datadir=/var/lib/mysql
-
-# Copy config script
+# Copy entrypoint script
 COPY ./conf/mdb_conf.sh /mdb_conf.sh
 RUN chmod +x /mdb_conf.sh
 
 # Expose port
 EXPOSE 3306
 
-# Entry point
-ENTRYPOINT ["./mdb_conf.sh"]
+# Use absolute path for entrypoint
+ENTRYPOINT ["/mdb_conf.sh"]
