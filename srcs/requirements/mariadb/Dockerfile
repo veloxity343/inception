@@ -11,7 +11,7 @@ RUN apk update && apk upgrade \
 COPY ./conf/mdb.conf /etc/my.cnf.d/mdb.conf
 
 # Setup script
-COPY ./conf/mdb_conf.sh /usr/local/bin/mdb_conf.sh
+COPY ./tools/mdb_conf.sh /usr/local/bin/mdb_conf.sh
 RUN chmod +x /usr/local/bin/mdb_conf.sh
 
 # Ensure runtime directories
