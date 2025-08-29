@@ -9,7 +9,7 @@ if [ ! -d "/var/lib/mysql/mysql" ]; then
     mysql_install_db --user=mysql --datadir=/var/lib/mysql
 
     echo "Running bootstrap SQL setup..."
-    mysqld --user=mysql --datadir=/var/lib/mysql --bootstrap <<-EOSQL
+    mysqld --user=mysql --datadir=/var/lib/mysql --bootstrap <<EOSQL
         -- Set root password
         ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
 
@@ -24,7 +24,7 @@ if [ ! -d "/var/lib/mysql/mysql" ]; then
         CREATE USER IF NOT EXISTS \`${MYSQL_USER}\`@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
         GRANT ALL PRIVILEGES ON \`${MYSQL_DB}\`.* TO \`${MYSQL_USER}\`@'%';
         FLUSH PRIVILEGES;
-    EOSQL
+EOSQL
 else
     echo "MariaDB data directory already exists, skipping initialization."
 fi
