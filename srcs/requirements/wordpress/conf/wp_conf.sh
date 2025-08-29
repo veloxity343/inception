@@ -460,8 +460,12 @@ main() {
     # 4. Create ready signal
     touch /var/www/wordpress/.wp_ready
     echo "WordPress setup completed - ready for connections"
-    
-    # 5. Setup content
+
+    # 5. Start PHP-FPM
+    echo "Starting PHP-FPM server."
+    exec /usr/sbin/php-fpm83 -F
+
+    # 6. Setup content
     echo "Setting up WordPress content and configuration..."
     setup_wp_content
     setup_wp_navigation
@@ -469,15 +473,11 @@ main() {
     setup_redis
     echo "WordPress content setup completed"
     
-    # 6. Final permissions
+    # 7. Final permissions
     echo "Setting final permissions..."
     chown -R www:www /var/www/wordpress
     find /var/www/wordpress -type d -exec chmod 755 {} \;
     find /var/www/wordpress -type f -exec chmod 644 {} \;
-    
-    # 7. Start PHP-FPM in FOREGROUND
-    echo "Starting PHP-FPM server."
-    exec /usr/sbin/php-fpm83 -F
 }
 
 # Trap signals to ensure clean shutdown
