@@ -7,12 +7,20 @@ RUN apk update && apk upgrade \
         mariadb-client \
     && rm -rf /var/cache/apk/*
 
-# Copy entrypoint script
-COPY ./conf/mdb_conf.sh /mdb_conf.sh
-RUN chmod +x /mdb_conf.sh
+# MariaDB config
+COPY ./conf/mdb.conf /etc/my.cnf.d/mdb.conf
 
-# Expose port
+# Setup script
+COPY ./conf/mdb_conf.sh /usr/local/bin/mdb_conf.sh
+RUN chmod +x /usr/local/bin/mdb_conf.sh
+
+# Ensure runtime directories
+RUN mkdir -p /run/mysqld && chown -R mysql:mysql /run/mysqld
+
+# Persistent data
+VOLUME ["/var/lib/mysql"]
+
 EXPOSE 3306
 
-# Use absolute path for entrypoint
-ENTRYPOINT ["/mdb_conf.sh"]
+ENTRYPOINT ["/usr/local/bin/mdb_conf.sh"]
+
