@@ -203,7 +203,7 @@ save-logs:
 
 # Archive logs with timestamp
 archive-logs:
-	@echo "$(BLUE)Archiving logs...$(RESET)"
+	@echo "$(BLUE)Archiving logs.$(RESET)"
 	@mkdir -p $(LOG_DIR)/archive
 	@for service in $(ALL_SERVICES); do \
 		$(call get_compose_cmd,$$service) logs $$service > $(LOG_DIR)/archive/$${service}_$(TIMESTAMP).logs 2>/dev/null || true; \
@@ -276,11 +276,16 @@ fclean:
 	@echo "  - Adminer: $(AD_DATA)"
 	@echo "  - Portainer: $(PT_DATA)"
 	@echo ""
-	@read -p "Type 'DELETE' to confirm: " confirm && [ "$confirm" = "DELETE" ] || (echo "Aborted." && exit 1)
-	@echo "$(RED)Removing $(PROJECT) containers, networks, and volumes...$(RESET)" | tee -a $(LOG_FILE)
-	$(COMPOSE) down -v --remove-orphans 2>&1 | tee -a $(LOG_FILE)
-	@$(MAKE) --no-print-directory clean-images
-	@echo "$(GREEN)$(PROJECT) cleanup finished. Other Docker projects unaffected.$(RESET)"
+	@read -p "Type 'DELETE' to confirm: " confirm; \
+	if [ "$$confirm" = "DELETE" ]; then \
+		echo "$(RED)Removing $(PROJECT) containers, networks, and volumes.$(RESET)" | tee -a $(LOG_FILE); \
+		$(COMPOSE) down -v --remove-orphans 2>&1 | tee -a $(LOG_FILE); \
+		$(MAKE) --no-print-directory clean-images; \
+		echo "$(GREEN)$(PROJECT) cleanup finished. Other Docker projects unaffected.$(RESET)"; \
+	else \
+		echo "Aborted."; \
+		exit 1; \
+	fi
 
 # Remove only project-specific images
 clean-images:
