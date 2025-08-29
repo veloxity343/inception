@@ -5,7 +5,6 @@ RUN apk update && apk upgrade \
     && apk add --no-cache \
         mariadb \
         mariadb-client \
-        bash \
     && rm -rf /var/cache/apk/*
 
 # Data directory

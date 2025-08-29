@@ -5,7 +5,6 @@ RUN apk update && apk upgrade \
     && apk add --no-cache \
         vsftpd \
         openssl \
-        bash \
     && rm -rf /var/cache/apk/*
 
 # Create FTP directory structure
@@ -27,7 +26,8 @@ RUN chmod +x /ftp-setup.sh
 
 # Create FTP user directory
 RUN mkdir -p /home/ftpuser \
-    && useradd -d /home/ftpuser -s /bin/bash ftpuser
+    && addgroup -S ftpuser \
+    && adduser -S -D -h /home/ftpuser -s /bin/bash -G ftpuser ftpuser
 
 # Set proper permissions
 RUN chown -R ftpuser:ftpuser /var/ftp \

@@ -8,7 +8,6 @@ RUN apk update && apk upgrade \
         php83-session \
         php83-json \
         wget \
-        bash \
     && rm -rf /var/cache/apk/*
 
 # Create symlink for PHP
@@ -17,7 +16,7 @@ RUN ln -sf /usr/bin/php83 /usr/bin/php
 # Setup Adminer
 RUN mkdir -p /var/www/html \
     && wget -O /var/www/html/index.php https://github.com/vrana/adminer/releases/download/v5.3.0/adminer-5.3.0.php
-    
+
 # Expose port 8080
 EXPOSE 8080
 

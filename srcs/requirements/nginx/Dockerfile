@@ -4,7 +4,6 @@ RUN apk update && apk upgrade \
     && apk add --no-cache \
         nginx \
         openssl \
-        bash \
     && rm -rf /var/cache/apk/*
 
 # Create SSL directory
