@@ -34,4 +34,4 @@ else
 fi
 
 echo "MariaDB setup complete. Starting in foreground..."
-exec mariadbd --user=mysql --datadir=/var/lib/mysql
+exec mysqld --defaults-file=/etc/my.cnf.d/mdb.conf --user=mysql

@@ -14,9 +14,14 @@ RUN apk add --no-cache \
         mariadb-client \
         netcat-openbsd
 
-# Create symlinks for PHP commands (Alpine uses php82)
-RUN ln -sf /usr/bin/php82 /usr/bin/php \
-    && ln -sf /usr/sbin/php-fpm82 /usr/sbin/php-fpm
+# Create symlinks for PHP commands
+RUN ln -sf /usr/bin/php83 /usr/bin/php \
+    && ln -sf /usr/sbin/php-fpm83 /usr/sbin/php-fpm
+
+# Create WordPress directory and www user
+RUN mkdir -p /var/www/wordpress \
+    && adduser -D -g 'www' www \
+    && chown -R www:www /var/www/wordpress
 
 # Make script executable
 COPY /conf/wp_conf.sh /
