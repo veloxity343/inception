@@ -1,13 +1,13 @@
-FROM debian:bookworm
+FROM alpine:latest
 
 # Install Redis
-RUN apt-get update && apt-get upgrade -y \
-    && apt-get install -y \
-        redis-server \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+RUN apk update && apk upgrade \
+    && apk add --no-cache \
+        redis \
+        bash \
+    && rm -rf /var/cache/apk/*
 
-# Create Redis user and directories
+# Create Redis user and directories (redis user exists in Alpine)
 RUN mkdir -p /var/lib/redis \
     && mkdir -p /var/log/redis \
     && mkdir -p /etc/redis \

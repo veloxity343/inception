@@ -1,27 +1,25 @@
-FROM debian:bookworm
+FROM alpine:latest
 
-# Install PHP-FPM and WordPress dependencies
-RUN apt-get update && apt-get upgrade -y \
-    && apt-get install -y \
+RUN apk add --no-cache \
+        php83-fpm \
+        php83-mysqli \
+        php83-curl \
+        php83-gd \
+        php83-mbstring \
+        php83-xml \
+        php83-zip \
+        php83-phar \
         curl \
-        php8.2 \
-        php8.2-fpm \
-        php8.2-mysql \
-        php8.2-curl \
-        php8.2-gd \
-        php8.2-intl \
-        php8.2-mbstring \
-        php8.2-xml \
-        php8.2-zip \
+        bash \
         mariadb-client \
-        netcat-openbsd \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+        netcat-openbsd
 
-# Copy WordPress configuration script
-COPY /conf/wp_conf.sh /
+# Create symlinks for PHP commands (Alpine uses php82)
+RUN ln -sf /usr/bin/php82 /usr/bin/php \
+    && ln -sf /usr/sbin/php-fpm82 /usr/sbin/php-fpm
 
 # Make script executable
+COPY /conf/wp_conf.sh /
 RUN chmod +x wp_conf.sh
 
 # Expose PHP-FPM port

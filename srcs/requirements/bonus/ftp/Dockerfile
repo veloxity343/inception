@@ -1,12 +1,12 @@
-FROM debian:bookworm
+FROM alpine:latest
 
 # Install vsftpd and dependencies
-RUN apt-get update && apt-get upgrade -y \
-    && apt-get install -y \
+RUN apk update && apk upgrade \
+    && apk add --no-cache \
         vsftpd \
         openssl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+        bash \
+    && rm -rf /var/cache/apk/*
 
 # Create FTP directory structure
 RUN mkdir -p /var/ftp/wordpress \

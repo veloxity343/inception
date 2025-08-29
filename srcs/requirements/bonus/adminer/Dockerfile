@@ -1,18 +1,23 @@
-FROM debian:bookworm
+FROM alpine:latest
 
 # Install PHP and dependencies
-RUN apt-get update && apt-get upgrade -y \
-    && apt-get install -y \
-        php8.2 \
-        php8.2-mysql \
+RUN apk update && apk upgrade \
+    && apk add --no-cache \
+        php83 \
+        php83-mysqli \
+        php83-session \
+        php83-json \
         wget \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+        bash \
+    && rm -rf /var/cache/apk/*
+
+# Create symlink for PHP
+RUN ln -sf /usr/bin/php83 /usr/bin/php
 
 # Setup Adminer
 RUN mkdir -p /var/www/html \
-    && wget -O /var/www/html/index.php https://github.com/vrana/adminer/releases/download/v4.8.1/adminer-4.8.1.php
-
+    && wget -O /var/www/html/index.php https://github.com/vrana/adminer/releases/download/v5.3.0/adminer-5.3.0.php
+    
 # Expose port 8080
 EXPOSE 8080
 

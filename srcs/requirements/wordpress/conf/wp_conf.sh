@@ -3,6 +3,16 @@ set -e
 
 echo "Starting WordPress."
 
+# Guard clauses
+: "${MYSQL_DB:?Missing MYSQL_DB}"
+: "${MYSQL_USER:?Missing MYSQL_USER}"
+: "${MYSQL_PASSWORD:?Missing MYSQL_PASSWORD}"
+: "${DOMAIN_NAME:?Missing DOMAIN_NAME}"
+: "${WP_TITLE:?Missing WP_TITLE}"
+: "${WP_ADMIN_N:?Missing WP_ADMIN_N}"
+: "${WP_ADMIN_P:?Missing WP_ADMIN_P}"
+: "${WP_ADMIN_E:?Missing WP_ADMIN_E}"
+
 #=== Database Connection Check ===
 wait_for_db() {
     echo "Waiting for MariaDB to be ready..."
@@ -25,27 +35,29 @@ wait_for_db() {
     exit 1
 }
 
-#=== PHP-FPM Configuration (Moved Early) ===
+#=== PHP-FPM Configuration ===
 config_php_fpm() {
-    echo "Configuring PHP 8.2-FPM..."
+    echo "Configuring PHP 8.3-FPM..."
     
     # Create WordPress directory early
     mkdir -p /var/www/wordpress
-    chown -R www-data:www-data /var/www/wordpress
+    chown -R www:www /var/www/wordpress
     
-    # Configure PHP-FPM pool
-    sed -i 's|^listen =.*|listen = 0.0.0.0:9000|' /etc/php/8.2/fpm/pool.d/www.conf
-    sed -i 's|;listen.owner = www-data|listen.owner = www-data|' /etc/php/8.2/fpm/pool.d/www.conf
-    sed -i 's|;listen.group = www-data|listen.group = www-data|' /etc/php/8.2/fpm/pool.d/www.conf
-    
+    # Configure PHP-FPM pool (Alpine uses php83)
+    sed -i 's|^listen =.*|listen = 0.0.0.0:9000|' /etc/php83/php-fpm.d/www.conf
+    sed -i 's|^;*listen.owner =.*|listen.owner = www|' /etc/php83/php-fpm.d/www.conf
+    sed -i 's|^;*listen.group =.*|listen.group = www|' /etc/php83/php-fpm.d/www.conf
+    sed -i 's|^user =.*|user = www|' /etc/php83/php-fpm.d/www.conf
+    sed -i 's|^group =.*|group = www|' /etc/php83/php-fpm.d/www.conf
+
     # Ensure PHP run directory exists with proper permissions
-    mkdir -p /run/php
-    chown www-data:www-data /run/php
+    mkdir -p /run/php-fpm83
+    chown www:www /run/php-fpm83
     
     # Test PHP-FPM config
-    php-fpm8.2 -t
+    php-fpm83 -t
     
-    echo "PHP 8.2-FPM configured successfully"
+    echo "PHP 8.3-FPM configured successfully"
 }
 
 #=== WordPress Installation ===
@@ -96,18 +108,17 @@ setup_wp() {
         --allow-root
     
     # Create additional user
-    echo "Creating additional user: ${WP_U_NAME}"
-    wp user create \
-        "${WP_U_NAME}" \
-        "${WP_U_EMAIL}" \
-        --user_pass="${WP_U_PASS}" \
-        --role="${WP_U_ROLE}" \
-        --allow-root
-    
+    if [ -n "${WP_U_NAME}" ] && [ -n "${WP_U_EMAIL}" ] && [ -n "${WP_U_PASS}" ]; then
+        wp user create "${WP_U_NAME}" "${WP_U_EMAIL}" \
+            --user_pass="${WP_U_PASS}" \
+            --role="${WP_U_ROLE:-subscriber}" \
+            --allow-root || echo "Warning: Could not create user ${WP_U_NAME}"
+    fi
+
     echo "WordPress installation completed!"
     
     # Set final permissions
-    chown -R www-data:www-data /var/www/wordpress
+    chown -R www:www /var/www/wordpress
 }
 
 #=== Idempotent WordPress Content Setup ===
@@ -433,7 +444,7 @@ setup_redis() {
     fi
 }
 
-#=== Main Execution - FIXED ===
+#=== Main Execution ===
 main() {
     echo "=== Starting WordPress Setup ==="
     
@@ -460,16 +471,17 @@ main() {
     
     # 6. Final permissions
     echo "Setting final permissions..."
-    chown -R www-data:www-data /var/www/wordpress
-    chmod -R 755 /var/www/wordpress
+    chown -R www:www /var/www/wordpress
+    find /var/www/wordpress -type d -exec chmod 755 {} \;
+    find /var/www/wordpress -type f -exec chmod 644 {} \;
     
-    # 7. Start PHP-FPM in FOREGROUND (this was the main issue!)
-    echo "Starting PHP-FPM server in foreground..."
-    exec /usr/sbin/php-fpm8.2 -F
+    # 7. Start PHP-FPM in FOREGROUND
+    echo "Starting PHP-FPM server."
+    exec /usr/sbin/php-fpm83 -F
 }
 
 # Trap signals to ensure clean shutdown
-trap 'echo "Received shutdown signal, stopping PHP-FPM..."; killall php-fpm8.2; exit 0' SIGTERM SIGINT
+trap 'echo "Received shutdown signal, stopping PHP-FPM."; pkill -TERM php-fpm83; exit 0' SIGTERM SIGINT
 
 # Run main function
 main

@@ -1,18 +1,19 @@
-FROM debian:bookworm
+FROM alpine:latest
 
-RUN apt-get update && apt-get upgrade -y \
-    && apt-get install -y \
+RUN apk update && apk upgrade \
+    && apk add --no-cache \
         nginx \
         openssl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+        bash \
+    && rm -rf /var/cache/apk/*
 
 # Create SSL directory
 RUN mkdir -p /etc/nginx/ssl
 
 # Create WordPress directory with proper permissions
 RUN mkdir -p /var/www/wordpress \
-    && chown -R www-data:www-data /var/www/wordpress
+    && adduser -D -g 'www' www \
+    && chown -R www:www /var/www/wordpress
 
 # Copy configuration files
 COPY conf/nginx.conf /etc/nginx/nginx.conf
