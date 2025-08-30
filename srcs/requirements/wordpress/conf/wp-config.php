@@ -1,12 +1,18 @@
 <?php
 
 // Database settings from environment with proper fallbacks
-define('DB_NAME',     getenv('MYSQL_DB') ?: 'wordpress');
-define('DB_USER',     getenv('MYSQL_USER') ?: 'wpuser');
-define('DB_PASSWORD', getenv('MYSQL_PASSWORD') ?: 'wppass');
+define('DB_NAME',     getenv('MYSQL_DB'));
+define('DB_USER',     getenv('MYSQL_USER'));
+define('DB_PASSWORD', getenv('MYSQL_PASSWORD'));
 define('DB_HOST',     'mariadb:3306');
 define('DB_CHARSET',  'utf8mb4');
 define('DB_COLLATE',  'utf8mb4_unicode_ci');
+
+// Validate required environment variables
+if (!DB_NAME || !DB_USER || !DB_PASSWORD) {
+    error_log('FATAL: Missing required database environment variables');
+    die('Database configuration error. Check environment variables.');
+}
 
 // Table prefix
 $table_prefix = 'wp_';
