@@ -12,21 +12,13 @@ define('DB_COLLATE',  '');
 $table_prefix = 'wp_';
 
 // Redis settings
-if (!defined('WP_REDIS_HOST')) {
-    define('WP_REDIS_HOST', 'redis');
-}
-if (!defined('WP_REDIS_PORT')) {
-    define('WP_REDIS_PORT', 6379);
-}
-if (!defined('WP_REDIS_DATABASE')) {
-    define('WP_REDIS_DATABASE', 0);
-}
-if (!defined('WP_REDIS_TIMEOUT')) {
-    define('WP_REDIS_TIMEOUT', 1);
-}
-if (!defined('WP_REDIS_READ_TIMEOUT')) {
-    define('WP_REDIS_READ_TIMEOUT', 1);
-}
+define('WP_REDIS_HOST', getenv('WP_REDIS_HOST') ?: 'redis');
+define('WP_REDIS_PORT', (int)(getenv('WP_REDIS_PORT') ?: 6379));
+define('WP_REDIS_DATABASE', (int)(getenv('REDIS_DATABASE') ?: 0));
+define('WP_REDIS_TIMEOUT', 1);
+define('WP_REDIS_READ_TIMEOUT', 1);
+define('WP_REDIS_SCHEME', 'tcp');
+define('WP_REDIS_PREFIX', 'wp_' . (getenv('MYSQL_DB') ?: 'wordpress') . '_');
 
 // Authentication Unique Keys and Salts.
 define('AUTH_KEY',         getenv('AUTH_KEY')         ?: 'change-me-auth-key');

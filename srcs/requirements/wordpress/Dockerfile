@@ -9,7 +9,6 @@ RUN apk add --no-cache \
         php83-xml \
         php83-zip \
         php83-phar \
-        php83-pecl-redis \
         curl \
         bash \
         mariadb-client \
