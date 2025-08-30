@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Setting up FTP server..."
+echo "Setting up FTP server."
 
 # Ensure secure chroot dir exists
 mkdir -p /var/run/vsftpd/empty
@@ -16,5 +16,5 @@ echo "FTP user ${FTP_USER} configured"
 chown -R ${FTP_USER}:${FTP_USER} /var/ftp
 chmod -R 755 /var/ftp
 
-echo "Starting vsftpd server..."
+echo "Starting vsftpd server."
 exec /usr/sbin/vsftpd /etc/vsftpd.conf

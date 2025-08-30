@@ -10,7 +10,7 @@ CYAN    = \033[1;36m
 PURPLE  = \033[1;35m
 RESET   = \033[0m
 
-# Project settings
+# Project-specific settings
 PROJECT = inception
 COMPOSE = docker compose -p $(PROJECT) -f ./srcs/docker-compose.yml
 COMPOSE_BONUS = docker compose -p $(PROJECT) -f ./srcs/docker-compose.yml -f ./srcs/docker-compose.bonus.yml

@@ -15,7 +15,7 @@ echo "Starting WordPress."
 
 #=== Database Connection Check ===
 wait_for_db() {
-    echo "Waiting for MariaDB to be ready..."
+    echo "Waiting for MariaDB to be ready."
     
     local start_time=$(date +%s)
     local timeout=60
@@ -26,7 +26,7 @@ wait_for_db() {
             echo "MariaDB is up and running!"
             return 0
         else
-            echo "Waiting for MariaDB to start..."
+            echo "Waiting for MariaDB to start."
             sleep 3
         fi
     done
@@ -37,7 +37,7 @@ wait_for_db() {
 
 #=== PHP-FPM Configuration ===
 config_php_fpm() {
-    echo "Configuring PHP 8.3-FPM..."
+    echo "Configuring PHP 8.3-FPM."
     
     # Create WordPress directory early
     mkdir -p /var/www/wordpress
@@ -62,14 +62,14 @@ config_php_fpm() {
 
 #=== WordPress Installation ===
 setup_wp() {
-    echo "Setting up WordPress..."
+    echo "Setting up WordPress."
     
     # Navigate to WordPress directory
     cd /var/www/wordpress
     
     # Download and install WP-CLI
     if [ ! -f /usr/local/bin/wp ]; then
-        echo "Installing WP-CLI..."
+        echo "Installing WP-CLI."
         curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
         chmod +x wp-cli.phar
         mv wp-cli.phar /usr/local/bin/wp
@@ -82,14 +82,14 @@ setup_wp() {
         return 0
     fi
     
-    echo "Installing WordPress..."
+    echo "Installing WordPress."
     
     # Clean directory and download WordPress
     find /var/www/wordpress/ -mindepth 1 -delete 2>/dev/null || true
     wp core download --allow-root
     
     # Configure WordPress database connection
-    echo "Configuring database connection..."
+    echo "Configuring database connection."
     wp core config \
         --dbhost=mariadb:3306 \
         --dbname="${MYSQL_DB}" \
@@ -98,7 +98,7 @@ setup_wp() {
         --allow-root
     
     # Install WordPress
-    echo "Installing WordPress core..."
+    echo "Installing WordPress core."
     wp core install \
         --url="${DOMAIN_NAME}" \
         --title="${WP_TITLE}" \
@@ -123,7 +123,7 @@ setup_wp() {
 
 #=== Idempotent WordPress Content Setup ===
 setup_wp_content() {
-    echo "Checking if WordPress content already exists..."
+    echo "Checking if WordPress content already exists."
     
     cd /var/www/wordpress
     
@@ -134,10 +134,10 @@ setup_wp_content() {
         return 0
     fi
 
-    echo "Setting up WordPress content..."
+    echo "Setting up WordPress content."
     
     # Create essential pages with error handling
-    echo "Creating WordPress pages..."
+    echo "Creating WordPress pages."
     
     # About page
     if wp post create --post_type=page --post_title='About' \
@@ -243,7 +243,7 @@ setup_wp_content() {
 
 #=== Idempotent WordPress Navigation ===
 setup_wp_navigation() {
-    echo "Setting up WordPress navigation menu..."
+    echo "Setting up WordPress navigation menu."
     
     cd /var/www/wordpress
     
@@ -255,7 +255,7 @@ setup_wp_navigation() {
         MENU_ID="$EXISTING_MENU_ID"
         
         # Clear existing menu items to avoid duplicates
-        echo "Clearing existing menu items..."
+        echo "Clearing existing menu items."
         EXISTING_ITEMS=$(wp menu item list "$MENU_ID" --format=ids --allow-root 2>/dev/null || echo "")
         if [ -n "$EXISTING_ITEMS" ]; then
             for item_id in $EXISTING_ITEMS; do
@@ -263,7 +263,7 @@ setup_wp_navigation() {
             done
         fi
     else
-        echo "Creating new Main Navigation menu..."
+        echo "Creating new Main Navigation menu."
         if wp menu create "Main Navigation" --allow-root 2>/dev/null; then
             MENU_ID=$(wp menu list --name="Main Navigation" --format=ids --allow-root 2>/dev/null | head -1)
             echo "New menu created (ID: $MENU_ID)"
@@ -286,7 +286,7 @@ setup_wp_navigation() {
     echo "Setting up menu items for menu ID: $MENU_ID"
     
     # Add pages to menu with error handling (don't exit on failure)
-    echo "Adding pages to navigation menu..."
+    echo "Adding pages to navigation menu."
     
     # Home
     wp menu item add-custom "$MENU_ID" "Home" "/" --allow-root 2>/dev/null || echo "Warning: Failed to add Home link"
@@ -319,7 +319,7 @@ setup_wp_navigation() {
     fi
     
     # Try to assign menu to theme location (but don't fail if it doesn't work)
-    echo "Attempting to assign menu to theme location..."
+    echo "Attempting to assign menu to theme location."
     if wp menu location assign "$MENU_ID" primary --allow-root 2>/dev/null; then
         echo "Menu assigned to primary location"
     else
@@ -337,7 +337,7 @@ setup_wp_navigation() {
 
 #=== Idempotent WordPress Theme Setup ===  
 setup_wp_theme() {
-    echo "Configuring WordPress theme..."
+    echo "Configuring WordPress theme."
     
     cd /var/www/wordpress
     
@@ -346,7 +346,7 @@ setup_wp_theme() {
     
     # Install and activate Twenty Twenty-Four if not already active
     if [ "$CURRENT_THEME" != "twentytwentyfour" ]; then
-        echo "Installing/activating Twenty Twenty-Four theme..."
+        echo "Installing/activating Twenty Twenty-Four theme."
         if wp theme install twentytwentyfour --allow-root 2>/dev/null; then
             echo "Twenty Twenty-Four installed successfully"
         else
@@ -362,7 +362,7 @@ setup_wp_theme() {
         echo "Twenty Twenty-Four theme already active"
     fi
     
-    # Set up basic customization (only if not already set)
+    # Set up basic customisation (only if not already set)
     CURRENT_DESCRIPTION=$(wp option get blogdescription --allow-root 2>/dev/null || echo "")
     if [ "$CURRENT_DESCRIPTION" != "Docker Inception Project - Full Stack Development" ]; then
         wp option update blogdescription "Docker Inception Project - Full Stack Development" --allow-root 2>/dev/null || echo "Warning: Could not update blog description"
@@ -392,15 +392,21 @@ setup_wp_theme() {
 #=== Idempotent Redis Cache Setup ===
 setup_redis() {
     if nc -z redis 6379 2>/dev/null; then
-        echo "Redis detected, configuring cache..."
+        echo "Redis detected, configuring cache."
         
         cd /var/www/wordpress
+
+        # Ensure wp-config.php exists before trying to modify it
+        if [ ! -f "wp-config.php" ]; then
+            echo "Warning: wp-config.php not found, skipping Redis config"
+            return 0
+        fi
         
         # Check if Redis plugin is already installed
         if wp plugin is-installed redis-cache --allow-root 2>/dev/null; then
             echo "Redis cache plugin already installed"
         else
-            echo "Installing Redis cache plugin..."
+            echo "Installing Redis cache plugin."
             if wp plugin install redis-cache --allow-root 2>/dev/null; then
                 echo "Redis cache plugin installed successfully"
             else
@@ -413,11 +419,11 @@ setup_redis() {
         if wp plugin is-active redis-cache --allow-root 2>/dev/null; then
             echo "Redis cache plugin already active"
         else
-            echo "Activating Redis cache plugin..."
+            echo "Activating Redis cache plugin."
             wp plugin activate redis-cache --allow-root 2>/dev/null || echo "Warning: Could not activate Redis cache plugin"
         fi
 
-        echo "Configuring WordPress to use Redis..."
+        echo "Configuring WordPress to use Redis."
         
         # Set Redis configuration (these commands are idempotent)
         wp config set WP_REDIS_HOST 'redis' --allow-root 2>/dev/null || echo "Warning: Could not set Redis host"
@@ -430,7 +436,7 @@ setup_redis() {
         if wp redis status --allow-root 2>/dev/null | grep -q "Connected"; then
             echo "Redis cache already enabled and connected"
         else
-            echo "Enabling Redis object cache..."
+            echo "Enabling Redis object cache."
             if wp redis enable --allow-root 2>/dev/null; then
                 echo "Redis cache enabled successfully"
             else
@@ -466,15 +472,15 @@ main() {
     exec /usr/sbin/php-fpm83 -F
 
     # 6. Setup content
-    echo "Setting up WordPress content and configuration..."
-    # setup_wp_content
-    # setup_wp_navigation
-    # setup_wp_theme
+    echo "Setting up WordPress content and configuration."
     setup_redis
+    setup_wp_content
+    setup_wp_navigation
+    setup_wp_theme
     echo "WordPress content setup completed"
     
     # 7. Final permissions
-    echo "Setting final permissions..."
+    echo "Setting final permissions."
     chown -R www:www /var/www/wordpress
     find /var/www/wordpress -type d -exec chmod 755 {} \;
     find /var/www/wordpress -type f -exec chmod 644 {} \;

@@ -9,10 +9,10 @@ chown -R mysql:mysql /run/mysqld /var/lib/mysql
 
 # Bootstrap on first run only
 if [ ! -d "/var/lib/mysql/mysql" ]; then
-  echo "Initializing MariaDB data directory..."
+  echo "Initialising MariaDB data directory."
   mariadb-install-db --user=mysql --datadir=/var/lib/mysql
   
-  echo "Creating initialization SQL file..."
+  echo "Creating initialisation SQL file."
   cat > /tmp/init.sql <<EOF
 -- Security cleanup
 DELETE FROM mysql.user WHERE User='';
@@ -44,15 +44,15 @@ GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 EOF
   
-  echo "MariaDB data directory initialized with setup SQL"
+  echo "MariaDB data directory initialised with setup SQL"
 else
-  echo "MariaDB data directory already exists, skipping initialization."
+  echo "MariaDB data directory already exists, skipping initialisation."
 fi
 
-echo "Starting MariaDB server..."
+echo "Starting MariaDB server."
 # Use --init-file to run our setup SQL on first start
 if [ -f /tmp/init.sql ]; then
-  echo "Running initialization SQL on startup..."
+  echo "Running initialisation SQL on startup."
   exec mariadbd --defaults-file=/etc/my.cnf.d/mdb.conf --user=mysql --init-file=/tmp/init.sql
 else
   exec mariadbd --defaults-file=/etc/my.cnf.d/mdb.conf --user=mysql
