@@ -29,6 +29,7 @@ RUN mkdir -p /etc/php83/conf.d \
 
 # Make script executable
 COPY ./tools/wp-setup.sh /
+COPY ./conf/wp-config.php /usr/local/share/wp-config.php
 RUN chmod +x wp-setup.sh
 
 # Expose PHP-FPM port
