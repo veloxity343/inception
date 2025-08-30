@@ -48,6 +48,7 @@ config_php_fpm() {
     sed -i 's|^;*listen.group =.*|listen.group = www|' /etc/php83/php-fpm.d/www.conf
     sed -i 's|^user =.*|user = www|' /etc/php83/php-fpm.d/www.conf
     sed -i 's|^group =.*|group = www|' /etc/php83/php-fpm.d/www.conf
+    sed -i 's|^;*clear_env =.*|clear_env = no|' /etc/php83/php-fpm.d/www.conf
 
     mkdir -p /run/php-fpm83
     chown www:www /run/php-fpm83
