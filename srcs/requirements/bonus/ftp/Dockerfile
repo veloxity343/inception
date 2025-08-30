@@ -18,8 +18,8 @@ RUN mkdir -p /var/run/vsftpd/empty \
     && chmod 555 /var/run/vsftpd/empty
 
 # Copy FTP configuration
-COPY conf/vsftpd.conf /etc/vsftpd.conf
-COPY tools/ftp-setup.sh /ftp-setup.sh
+COPY ./conf/vsftpd.conf /etc/vsftpd.conf
+COPY ./tools/ftp-setup.sh /ftp-setup.sh
 
 # Make setup script executable
 RUN chmod +x /ftp-setup.sh

@@ -20,6 +20,13 @@ volumes:
       device: ${DATA_PATH}/portainer
 
 services:
+  wordpress:
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - WP_REDIS_HOST=redis
+      - WP_REDIS_PORT=6379
   redis:
     image: redis:rcheong
     container_name: inception-redis

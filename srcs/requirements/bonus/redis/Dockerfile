@@ -15,7 +15,7 @@ RUN mkdir -p /var/lib/redis \
     && chown -R redis:redis /var/log/redis
 
 # Copy Redis configuration
-COPY conf/redis.conf /etc/redis/redis.conf
+COPY ./conf/redis.conf /etc/redis/redis.conf
 
 # Set proper permissions
 RUN chown redis:redis /etc/redis/redis.conf \

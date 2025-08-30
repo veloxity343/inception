@@ -15,8 +15,8 @@ RUN mkdir -p /var/www/wordpress \
     && chown -R www:www /var/www/wordpress
 
 # Copy configuration files
-COPY conf/nginx.conf /etc/nginx/nginx.conf
-COPY tools/auto.sh /auto.sh
+COPY ./conf/nginx.conf /etc/nginx/nginx.conf
+COPY ./tools/auto.sh /auto.sh
 
 RUN chmod +x /auto.sh
 

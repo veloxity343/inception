@@ -13,9 +13,14 @@ echo "Starting WordPress."
 : "${WP_ADMIN_P:?Missing WP_ADMIN_P}"
 : "${WP_ADMIN_E:?Missing WP_ADMIN_E}"
 
+WP_DIR="/var/www/wordpress"
+WP_USER="www"
+WP_GROUP="www"
+WP_CONFIG_TEMPLATE="/usr/local/share/wp-config.php"
+
 #=== Database Connection Check ===
 wait_for_db() {
-    echo "Waiting for MariaDB to be ready..."
+    echo "Waiting for MariaDB to be ready."
     
     local start_time=$(date +%s)
     local timeout=60
@@ -26,7 +31,7 @@ wait_for_db() {
             echo "MariaDB is up and running!"
             return 0
         else
-            echo "Waiting for MariaDB to start..."
+            echo "Waiting for MariaDB to start."
             sleep 3
         fi
     done
@@ -37,95 +42,79 @@ wait_for_db() {
 
 #=== PHP-FPM Configuration ===
 config_php_fpm() {
-    echo "Configuring PHP 8.3-FPM..."
-    
-    # Create WordPress directory early
-    mkdir -p /var/www/wordpress
-    chown -R www:www /var/www/wordpress
-    
-    # Configure PHP-FPM pool (Alpine uses php83)
+    echo "Configuring PHP 8.3-FPM."
+
+    mkdir -p "$WP_DIR"
+    chown -R "$WP_USER:$WP_GROUP" "$WP_DIR"
+
     sed -i 's|^listen =.*|listen = 0.0.0.0:9000|' /etc/php83/php-fpm.d/www.conf
     sed -i 's|^;*listen.owner =.*|listen.owner = www|' /etc/php83/php-fpm.d/www.conf
     sed -i 's|^;*listen.group =.*|listen.group = www|' /etc/php83/php-fpm.d/www.conf
     sed -i 's|^user =.*|user = www|' /etc/php83/php-fpm.d/www.conf
     sed -i 's|^group =.*|group = www|' /etc/php83/php-fpm.d/www.conf
 
-    # Ensure PHP run directory exists with proper permissions
     mkdir -p /run/php-fpm83
     chown www:www /run/php-fpm83
-    
-    # Test PHP-FPM config
+
     php-fpm83 -t
-    
     echo "PHP 8.3-FPM configured successfully"
 }
 
 #=== WordPress Installation ===
 setup_wp() {
-    echo "Setting up WordPress..."
-    
-    # Navigate to WordPress directory
-    cd /var/www/wordpress
-    
-    # Download and install WP-CLI
-    if [ ! -f /usr/local/bin/wp ]; then
-        echo "Installing WP-CLI..."
-        curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-        chmod +x wp-cli.phar
-        mv wp-cli.phar /usr/local/bin/wp
-        echo "WP-CLI installed successfully"
+    echo "Setting up WordPress."
+
+    cd "$WP_DIR"
+
+    # 1) Download core files if missing (don’t delete existing volume content)
+    if [ ! -f "wp-includes/version.php" ]; then
+        echo "Downloading WordPress core."
+        wp core download --allow-root
+    else
+        echo "WordPress core files already present"
     fi
-    
-    # Check if WordPress is already installed
+
+    # 2) Ensure wp-config.php exists — copy our template once
+    if [ ! -f "wp-config.php" ]; then
+        echo "Placing wp-config.php template."
+        cp "$WP_CONFIG_TEMPLATE" "$WP_DIR/wp-config.php"
+        chown "$WP_USER:$WP_GROUP" "$WP_DIR/wp-config.php"
+    else
+        echo "wp-config.php already present, leaving as-is"
+    fi
+
+    # 3) If not installed, run the install
     if wp core is-installed --allow-root >/dev/null 2>&1; then
-        echo "WordPress already installed, skipping setup"
-        return 0
+        echo "WordPress already installed, skipping install"
+    else
+        echo "Installing WordPress core."
+        wp core install \
+            --url="${DOMAIN_NAME}" \
+            --title="${WP_TITLE}" \
+            --admin_user="${WP_ADMIN_N}" \
+            --admin_password="${WP_ADMIN_P}" \
+            --admin_email="${WP_ADMIN_E}" \
+            --skip-email \
+            --allow-root
+        echo "WordPress installation completed!"
     fi
-    
-    echo "Installing WordPress..."
-    
-    # Clean directory and download WordPress
-    find /var/www/wordpress/ -mindepth 1 -delete 2>/dev/null || true
-    wp core download --allow-root
-    
-    # Configure WordPress database connection
-    echo "Configuring database connection..."
-    wp core config \
-        --dbhost=mariadb:3306 \
-        --dbname="${MYSQL_DB}" \
-        --dbuser="${MYSQL_USER}" \
-        --dbpass="${MYSQL_PASSWORD}" \
-        --allow-root
-    
-    # Install WordPress
-    echo "Installing WordPress core..."
-    wp core install \
-        --url="${DOMAIN_NAME}" \
-        --title="${WP_TITLE}" \
-        --admin_user="${WP_ADMIN_N}" \
-        --admin_password="${WP_ADMIN_P}" \
-        --admin_email="${WP_ADMIN_E}" \
-        --allow-root
-    
-    # Create additional user
-    if [ -n "${WP_U_NAME}" ] && [ -n "${WP_U_EMAIL}" ] && [ -n "${WP_U_PASS}" ]; then
+
+    # 4) Optional additional user
+    if [ -n "${WP_U_NAME:-}" ] && [ -n "${WP_U_EMAIL:-}" ] && [ -n "${WP_U_PASS:-}" ]; then
         wp user create "${WP_U_NAME}" "${WP_U_EMAIL}" \
             --user_pass="${WP_U_PASS}" \
             --role="${WP_U_ROLE:-subscriber}" \
             --allow-root || echo "Warning: Could not create user ${WP_U_NAME}"
     fi
 
-    echo "WordPress installation completed!"
-    
-    # Set final permissions
-    chown -R www:www /var/www/wordpress
+    chown -R "$WP_USER:$WP_GROUP" "$WP_DIR"
 }
 
 #=== WordPress Content Setup ===
 setup_wp_content() {
-    echo "Checking if WordPress content already exists..."
+    echo "Checking if WordPress content already exists."
     
-    cd /var/www/wordpress
+    cd "$WP_DIR"
     
     # Check if our custom pages already exist
     ABOUT_EXISTS=$(wp post list --post_type=page --name=about --format=count --allow-root 2>/dev/null || echo "0")
@@ -134,10 +123,10 @@ setup_wp_content() {
         return 0
     fi
 
-    echo "Setting up WordPress content..."
+    echo "Setting up WordPress content."
     
     # Create essential pages with error handling
-    echo "Creating WordPress pages..."
+    echo "Creating WordPress pages."
     
     # About page
     if wp post create --post_type=page --post_title='About' \
@@ -243,9 +232,9 @@ setup_wp_content() {
 
 #=== WordPress Navigation ===
 setup_wp_navigation() {
-    echo "Setting up WordPress navigation menu..."
+    echo "Setting up WordPress navigation menu."
     
-    cd /var/www/wordpress
+    cd "$WP_DIR"
     
     # Check if "Main Navigation" menu already exists
     EXISTING_MENU_ID=$(wp menu list --format=csv --fields=term_id,name --allow-root 2>/dev/null | grep "Main Navigation" | cut -d',' -f1 2>/dev/null || echo "")
@@ -255,7 +244,7 @@ setup_wp_navigation() {
         MENU_ID="$EXISTING_MENU_ID"
         
         # Clear existing menu items to avoid duplicates
-        echo "Clearing existing menu items..."
+        echo "Clearing existing menu items."
         EXISTING_ITEMS=$(wp menu item list "$MENU_ID" --format=ids --allow-root 2>/dev/null || echo "")
         if [ -n "$EXISTING_ITEMS" ]; then
             for item_id in $EXISTING_ITEMS; do
@@ -263,7 +252,7 @@ setup_wp_navigation() {
             done
         fi
     else
-        echo "Creating new Main Navigation menu..."
+        echo "Creating new Main Navigation menu."
         if wp menu create "Main Navigation" --allow-root 2>/dev/null; then
             MENU_ID=$(wp menu list --name="Main Navigation" --format=ids --allow-root 2>/dev/null | head -1)
             echo "New menu created (ID: $MENU_ID)"
@@ -286,7 +275,7 @@ setup_wp_navigation() {
     echo "Setting up menu items for menu ID: $MENU_ID"
     
     # Add pages to menu with error handling (don't exit on failure)
-    echo "Adding pages to navigation menu..."
+    echo "Adding pages to navigation menu."
     
     # Home
     wp menu item add-custom "$MENU_ID" "Home" "/" --allow-root 2>/dev/null || echo "Warning: Failed to add Home link"
@@ -319,7 +308,7 @@ setup_wp_navigation() {
     fi
     
     # Try to assign menu to theme location (but don't fail if it doesn't work)
-    echo "Attempting to assign menu to theme location..."
+    echo "Attempting to assign menu to theme location."
     if wp menu location assign "$MENU_ID" primary --allow-root 2>/dev/null; then
         echo "Menu assigned to primary location"
     else
@@ -337,16 +326,16 @@ setup_wp_navigation() {
 
 #=== WordPress Theme Setup ===  
 setup_wp_theme() {
-    echo "Configuring WordPress theme..."
+    echo "Configuring WordPress theme."
     
-    cd /var/www/wordpress
+    cd "$WP_DIR"
     
     # Check current theme
     CURRENT_THEME=$(wp theme status --allow-root 2>/dev/null | grep "Active:" | cut -d' ' -f2 || echo "")
     
     # Install and activate Twenty Twenty-Four if not already active
     if [ "$CURRENT_THEME" != "twentytwentyfour" ]; then
-        echo "Installing/activating Twenty Twenty-Four theme..."
+        echo "Installing/activating Twenty Twenty-Four theme."
         if wp theme install twentytwentyfour --allow-root 2>/dev/null; then
             echo "Twenty Twenty-Four installed successfully"
         else
@@ -391,74 +380,56 @@ setup_wp_theme() {
 
 #=== Redis Cache Setup ===
 setup_redis() {
-    if nc -z redis 6379 2>/dev/null; then
-        echo "Redis detected, configuring cache..."
-        
-        cd /var/www/wordpress
-        
-        # Check if Redis plugin is already installed
-        if wp plugin is-installed redis-cache --allow-root 2>/dev/null; then
-            echo "Redis cache plugin already installed"
-        else
-            echo "Installing Redis cache plugin..."
-            if wp plugin install redis-cache --allow-root 2>/dev/null; then
-                echo "Redis cache plugin installed successfully"
-            else
-                echo "Warning: Failed to install Redis cache plugin"
-                return 0
-            fi
-        fi
-        
-        # Check if plugin is already active
-        if wp plugin is-active redis-cache --allow-root 2>/dev/null; then
-            echo "Redis cache plugin already active"
-        else
-            echo "Activating Redis cache plugin..."
-            wp plugin activate redis-cache --allow-root 2>/dev/null || echo "Warning: Could not activate Redis cache plugin"
-        fi
+    cd "$WP_DIR"
 
-        echo "Configuring WordPress to use Redis..."
-        
-        # Set Redis configuration (these commands are idempotent)
-        wp config set WP_REDIS_HOST 'redis' --allow-root 2>/dev/null || echo "Warning: Could not set Redis host"
-        wp config set WP_REDIS_PORT 6379 --allow-root 2>/dev/null || echo "Warning: Could not set Redis port"
-        wp config set WP_REDIS_DATABASE 0 --allow-root 2>/dev/null || echo "Warning: Could not set Redis database"
-        wp config set WP_REDIS_TIMEOUT 1 --allow-root 2>/dev/null || echo "Warning: Could not set Redis timeout"
-        wp config set WP_REDIS_READ_TIMEOUT 1 --allow-root 2>/dev/null || echo "Warning: Could not set Redis read timeout"
-        
-        # Enable Redis object cache (check if already enabled first)
+    # Install plugin if missing
+    if wp plugin is-installed redis-cache --allow-root 2>/dev/null; then
+        echo "Redis cache plugin already installed"
+    else
+        echo "Installing Redis cache plugin."
+        if wp plugin install redis-cache --allow-root >/dev/null 2>&1; then
+            echo "Redis cache plugin installed successfully"
+        else
+            echo "Warning: Failed to install Redis cache plugin"
+            return 0
+        fi
+    fi
+
+    # Activate if not active (activation is cheap and safe)
+    if wp plugin is-active redis-cache --allow-root 2>/dev/null; then
+        echo "Redis cache plugin already active"
+    else
+        echo "Activating Redis cache plugin."
+        wp plugin activate redis-cache --allow-root >/dev/null 2>&1 || echo "Warning: Could not activate Redis cache plugin"
+    fi
+
+    # Enable object cache (creates drop-in) only if Redis responds
+    if nc -z redis 6379 2>/dev/null; then
         if wp redis status --allow-root 2>/dev/null | grep -q "Connected"; then
             echo "Redis cache already enabled and connected"
         else
-            echo "Enabling Redis object cache..."
-            if wp redis enable --allow-root 2>/dev/null; then
+            echo "Enabling Redis object cache."
+            if wp redis enable --allow-root >/dev/null 2>&1; then
                 echo "Redis cache enabled successfully"
             else
-                echo "Warning: Could not enable Redis cache"
+                echo "Warning: Could not enable Redis cache (will keep site running without cache)"
             fi
         fi
-        
-        echo "Redis cache configuration completed"
     else
-        echo "Redis not available, skipping cache setup"
+        echo "Redis not available, skipping cache enable (site will run without caching)"
     fi
 }
 
 #=== Main Execution ===
 main() {
     echo "=== Starting WordPress Setup ==="
-    
-    # Wait for database
+
     wait_for_db
-    
-    # Configure PHP-FPM
     config_php_fpm
-    
-    # Setup WordPress core
     setup_wp
 
     # Setup content
-    echo "Setting up WordPress content and configuration..."
+    echo "Setting up WordPress content and configuration."
     {
         sleep 5
         setup_wp_content
@@ -469,14 +440,14 @@ main() {
     echo "WordPress content setup completed"
     
     # Final permissions
-    echo "Setting final permissions..."
-    chown -R www:www /var/www/wordpress
-    find /var/www/wordpress -type d -exec chmod 755 {} \;
-    find /var/www/wordpress -type f -exec chmod 644 {} \;
+    echo "Setting final permissions."
+    chown -R "$WP_USER:$WP_GROUP" "$WP_DIR"
+    find "$WP_DIR" -type d -exec chmod 755 {} \;
+    find "$WP_DIR" -type f -exec chmod 644 {} \;
 
 
     # Create ready signal
-    touch /var/www/wordpress/.wp_ready
+    touch "$WP_DIR/.wp_ready"
     echo "WordPress setup completed - ready for connections"
 
     echo "Starting PHP-FPM server."
