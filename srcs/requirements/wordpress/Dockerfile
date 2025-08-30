@@ -28,10 +28,10 @@ RUN mkdir -p /etc/php83/conf.d \
     && echo "memory_limit = 512M" > /etc/php83/conf.d/99-custom.ini
 
 # Make script executable
-COPY /conf/wp_conf.sh /
-RUN chmod +x wp_conf.sh
+COPY /conf/wp-setup.sh /
+RUN chmod +x wp-setup.sh
 
 # Expose PHP-FPM port
 EXPOSE 9000
 
-ENTRYPOINT ["./wp_conf.sh"]
+ENTRYPOINT ["./wp-setup.sh"]
