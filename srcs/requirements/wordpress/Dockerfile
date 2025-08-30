@@ -27,6 +27,16 @@ RUN mkdir -p /var/www/wordpress \
 RUN mkdir -p /etc/php83/conf.d \
     && echo "memory_limit = 512M" > /etc/php83/conf.d/99-custom.ini
 
+# Install WP-CLI globally
+RUN curl -fsSL -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+    && chmod +x /usr/local/bin/wp
+
+# Pre-install Redis plugin so setup_redis doesn’t fail
+WORKDIR /var/www/wordpress
+RUN wp core download --allow-root \
+    && wp plugin install redis-cache --allow-root \
+    && wp plugin activate redis-cache --allow-root
+
 # Make script executable
 COPY ./tools/wp-setup.sh /
 COPY ./conf/wp-config.php /usr/local/share/wp-config.php
