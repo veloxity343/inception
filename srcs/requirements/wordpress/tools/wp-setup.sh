@@ -60,13 +60,33 @@ config_php_fpm() {
     echo "PHP 8.3-FPM configured successfully"
 }
 
+# Ensure WP-CLI exists (install once in container if needed) - MISSING FROM YOUR SCRIPT!
+ensure_wp_cli() {
+    if ! command -v wp >/dev/null 2>&1; then
+        echo "Installing WP-CLI."
+        curl -fsSL -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+        chmod +x /usr/local/bin/wp
+        echo "WP-CLI installed successfully"
+        
+        # Verify installation
+        if wp --version >/dev/null 2>&1; then
+            echo "WP-CLI verification successful"
+        else
+            echo "ERROR: WP-CLI installation failed"
+            exit 1
+        fi
+    else
+        echo "WP-CLI already available"
+    fi
+}
+
 #=== WordPress Installation ===
 setup_wp() {
     echo "Setting up WordPress."
 
     cd "$WP_DIR"
 
-    # 1) Download core files if missing (don’t delete existing volume content)
+    # 1) Download core files if missing (don't delete existing volume content)
     if [ ! -f "wp-includes/version.php" ]; then
         echo "Downloading WordPress core."
         wp core download --allow-root
@@ -101,10 +121,14 @@ setup_wp() {
 
     # 4) Optional additional user
     if [ -n "${WP_U_NAME:-}" ] && [ -n "${WP_U_EMAIL:-}" ] && [ -n "${WP_U_PASS:-}" ]; then
-        wp user create "${WP_U_NAME}" "${WP_U_EMAIL}" \
-            --user_pass="${WP_U_PASS}" \
-            --role="${WP_U_ROLE:-subscriber}" \
-            --allow-root || echo "Warning: Could not create user ${WP_U_NAME}"
+        if wp user get "${WP_U_NAME}" --allow-root >/dev/null 2>&1; then
+            echo "User ${WP_U_NAME} already exists, skipping creation"
+        else
+            wp user create "${WP_U_NAME}" "${WP_U_EMAIL}" \
+                --user_pass="${WP_U_PASS}" \
+                --role="${WP_U_ROLE:-subscriber}" \
+                --allow-root || echo "Warning: Could not create user ${WP_U_NAME}"
+        fi
     fi
 
     chown -R "$WP_USER:$WP_GROUP" "$WP_DIR"
@@ -135,7 +159,7 @@ setup_wp_content() {
 
 <h3>Technical Architecture</h3>
 <ul>
-<li><strong>WordPress</strong> - Content Management System (PHP 8.2 + MySQL)</li>
+<li><strong>WordPress</strong> - Content Management System (PHP 8.3 + MySQL)</li>
 <li><strong>Nginx</strong> - Reverse proxy with SSL/TLS</li>
 <li><strong>MariaDB</strong> - Database backend</li>
 <li><strong>Redis</strong> - Caching layer for performance</li>
@@ -378,45 +402,92 @@ setup_wp_theme() {
     echo "WordPress theme configuration completed"
 }
 
-#=== Redis Cache Setup ===
+#=== Enhanced Redis Cache Setup ===
 setup_redis() {
     cd "$WP_DIR"
+    echo "Setting up Redis cache integration..."
 
-    # Install plugin if missing
-    if wp plugin is-installed redis-cache --allow-root 2>/dev/null; then
-        echo "Redis cache plugin already installed"
-    else
-        echo "Installing Redis cache plugin."
-        if wp plugin install redis-cache --allow-root >/dev/null 2>&1; then
+    # Wait for Redis service to be fully ready
+    echo "Waiting for Redis service..."
+    local redis_ready=false
+    for i in {1..15}; do
+        if echo "PING" | nc redis 6379 2>/dev/null | grep -q "PONG"; then
+            echo "Redis is responding to PING"
+            redis_ready=true
+            break
+        fi
+        echo "Waiting for Redis... (attempt $i/15)"
+        sleep 2
+    done
+
+    if [ "$redis_ready" = false ]; then
+        echo "Redis service not available after 30 seconds, continuing without cache"
+        return 0
+    fi
+
+    # Check if PHP Redis extension is loaded
+    if ! php -m | grep -qi redis; then
+        echo "Warning: PHP Redis extension not found, continuing without cache"
+        return 0
+    fi
+
+    echo "PHP Redis extension is available"
+
+    # Install Redis cache plugin
+    if ! wp plugin is-installed redis-cache --allow-root 2>/dev/null; then
+        echo "Installing Redis Object Cache plugin..."
+        if wp plugin install redis-cache --allow-root --quiet; then
             echo "Redis cache plugin installed successfully"
         else
-            echo "Warning: Failed to install Redis cache plugin"
+            echo "Failed to install Redis cache plugin"
             return 0
         fi
-    fi
-
-    # Activate if not active (activation is cheap and safe)
-    if wp plugin is-active redis-cache --allow-root 2>/dev/null; then
-        echo "Redis cache plugin already active"
     else
-        echo "Activating Redis cache plugin."
-        wp plugin activate redis-cache --allow-root >/dev/null 2>&1 || echo "Warning: Could not activate Redis cache plugin"
+        echo "Redis cache plugin already installed"
     fi
 
-    # Enable object cache (creates drop-in) only if Redis responds
-    if nc -z redis 6379 2>/dev/null; then
-        if wp redis status --allow-root 2>/dev/null | grep -q "Connected"; then
-            echo "Redis cache already enabled and connected"
+    # Activate plugin
+    if ! wp plugin is-active redis-cache --allow-root 2>/dev/null; then
+        echo "Activating Redis cache plugin..."
+        if wp plugin activate redis-cache --allow-root --quiet; then
+            echo "Redis cache plugin activated successfully"
         else
-            echo "Enabling Redis object cache."
-            if wp redis enable --allow-root >/dev/null 2>&1; then
-                echo "Redis cache enabled successfully"
-            else
-                echo "Warning: Could not enable Redis cache (will keep site running without cache)"
-            fi
+            echo "Failed to activate Redis cache plugin"
+            return 0
         fi
     else
-        echo "Redis not available, skipping cache enable (site will run without caching)"
+        echo "Redis cache plugin already active"
+    fi
+
+    # Enable object cache
+    echo "Checking Redis cache status..."
+    
+    # Get current status
+    local cache_status
+    cache_status=$(wp redis status --allow-root 2>/dev/null || echo "disconnected")
+    
+    if echo "$cache_status" | grep -qi "connected"; then
+        echo "Redis cache already enabled and connected"
+    else
+        echo "Enabling Redis object cache..."
+        
+        # Enable Redis
+        if wp redis enable --allow-root 2>/dev/null; then
+            echo "Redis object cache enabled successfully"
+            
+            # Verify it's working
+            sleep 2
+            local new_status
+            new_status=$(wp redis status --allow-root 2>/dev/null || echo "unknown")
+            
+            if echo "$new_status" | grep -qi "connected"; then
+                echo "Redis cache is now working!"
+            else
+                echo "Redis cache enabled but connection issues remain"
+            fi
+        else
+            echo "Warning: Could not enable Redis cache (site will run without caching)"
+        fi
     fi
 }
 
@@ -426,31 +497,32 @@ main() {
 
     wait_for_db
     config_php_fpm
+    ensure_wp_cli
     setup_wp
-
-    # Setup content
-    echo "Setting up WordPress content and configuration."
-    {
-        sleep 5
-        setup_wp_content
-        setup_wp_navigation
-        setup_wp_theme
-        setup_redis
-    } &
-    echo "WordPress content setup completed"
-    
-    # Final permissions
-    echo "Setting final permissions."
-    chown -R "$WP_USER:$WP_GROUP" "$WP_DIR"
-    find "$WP_DIR" -type d -exec chmod 755 {} \;
-    find "$WP_DIR" -type f -exec chmod 644 {} \;
-
 
     # Create ready signal
     touch "$WP_DIR/.wp_ready"
     echo "WordPress setup completed - ready for connections"
 
     echo "Starting PHP-FPM server."
+    
+    # Background content setup to avoid blocking PHP-FPM startup
+    {
+        sleep 5
+        echo "Setting up WordPress content and configuration."
+        setup_wp_content
+        setup_wp_navigation
+        setup_wp_theme
+        setup_redis
+        echo "WordPress content setup completed"
+        
+        # Final permissions
+        echo "Setting final permissions."
+        chown -R "$WP_USER:$WP_GROUP" "$WP_DIR"
+        find "$WP_DIR" -type d -exec chmod 755 {} \;
+        find "$WP_DIR" -type f -exec chmod 644 {} \;
+    } &
+
     exec /usr/sbin/php-fpm83 -F
 }
 
