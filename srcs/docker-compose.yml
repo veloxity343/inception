@@ -47,8 +47,8 @@ services:
     ports:
       - "443:443"
     depends_on:
-      wordpress:
-        condition: service_healthy
+      - wordpress
+    #     condition: service_healthy
     volumes:
       - wordpress:/var/www/wordpress
     env_file:
@@ -73,9 +73,9 @@ services:
     networks:
       - inception
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 9000 && [ -f /var/www/wordpress/.wp_ready ]"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 120s
+    # healthcheck:
+    #   test: ["CMD-SHELL", "nc -z localhost 9000 && [ -f /var/www/wordpress/.wp_ready ]"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 12
+    #   start_period: 120s

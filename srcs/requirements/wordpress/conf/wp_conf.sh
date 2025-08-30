@@ -43,7 +43,7 @@ config_php_fpm() {
     mkdir -p /var/www/wordpress
     chown -R www:www /var/www/wordpress
     
-    # Configure PHP-FPM pool (Alpine uses php83)
+    # Config PHP-FPM pool (Alpine uses php83)
     sed -i 's|^listen =.*|listen = 0.0.0.0:9000|' /etc/php83/php-fpm.d/www.conf
     sed -i 's|^;*listen.owner =.*|listen.owner = www|' /etc/php83/php-fpm.d/www.conf
     sed -i 's|^;*listen.group =.*|listen.group = www|' /etc/php83/php-fpm.d/www.conf
@@ -88,7 +88,7 @@ setup_wp() {
     find /var/www/wordpress/ -mindepth 1 -delete 2>/dev/null || true
     wp core download --allow-root
     
-    # Configure WordPress database connection
+    # Config WordPress database connection
     echo "Configuring database connection."
     wp core config \
         --dbhost=mariadb:3306 \
@@ -119,6 +119,67 @@ setup_wp() {
     
     # Set final permissions
     chown -R www:www /var/www/wordpress
+}
+
+#=== Idempotent Redis Cache Setup ===
+setup_redis() {
+    if nc -z redis 6379 2>/dev/null; then
+        echo "Redis detected, configuring cache."
+        
+        cd /var/www/wordpress
+
+        # Ensure wp-config.php exists before trying to modify it
+        if [ ! -f "wp-config.php" ]; then
+            echo "Warning: wp-config.php not found, skipping Redis config"
+            return 0
+        fi
+        
+        # Check if Redis plugin is already installed
+        if wp plugin is-installed redis-cache --allow-root 2>/dev/null; then
+            echo "Redis cache plugin already installed"
+        else
+            echo "Installing Redis cache plugin."
+            if wp plugin install redis-cache --allow-root 2>/dev/null; then
+                echo "Redis cache plugin installed successfully"
+            else
+                echo "Warning: Failed to install Redis cache plugin"
+                return 0
+            fi
+        fi
+        
+        # Check if plugin is already active
+        if wp plugin is-active redis-cache --allow-root 2>/dev/null; then
+            echo "Redis cache plugin already active"
+        else
+            echo "Activating Redis cache plugin."
+            wp plugin activate redis-cache --allow-root 2>/dev/null || echo "Warning: Could not activate Redis cache plugin"
+        fi
+
+        echo "Configuring WordPress to use Redis."
+        
+        # Set Redis configuration (these commands are idempotent)
+        wp config set WP_REDIS_HOST 'redis' --allow-root 2>/dev/null || echo "Warning: Could not set Redis host"
+        wp config set WP_REDIS_PORT 6379 --allow-root 2>/dev/null || echo "Warning: Could not set Redis port"
+        wp config set WP_REDIS_DATABASE 0 --allow-root 2>/dev/null || echo "Warning: Could not set Redis database"
+        wp config set WP_REDIS_TIMEOUT 1 --allow-root 2>/dev/null || echo "Warning: Could not set Redis timeout"
+        wp config set WP_REDIS_READ_TIMEOUT 1 --allow-root 2>/dev/null || echo "Warning: Could not set Redis read timeout"
+        
+        # Enable Redis object cache (check if already enabled first)
+        if wp redis status --allow-root 2>/dev/null | grep -q "Connected"; then
+            echo "Redis cache already enabled and connected"
+        else
+            echo "Enabling Redis object cache."
+            if wp redis enable --allow-root 2>/dev/null; then
+                echo "Redis cache enabled successfully"
+            else
+                echo "Warning: Could not enable Redis cache"
+            fi
+        fi
+        
+        echo "Redis cache configuration completed"
+    else
+        echo "Redis not available, skipping cache setup"
+    fi
 }
 
 #=== Idempotent WordPress Content Setup ===
@@ -389,67 +450,6 @@ setup_wp_theme() {
     echo "WordPress theme configuration completed"
 }
 
-#=== Idempotent Redis Cache Setup ===
-setup_redis() {
-    if nc -z redis 6379 2>/dev/null; then
-        echo "Redis detected, configuring cache."
-        
-        cd /var/www/wordpress
-
-        # Ensure wp-config.php exists before trying to modify it
-        if [ ! -f "wp-config.php" ]; then
-            echo "Warning: wp-config.php not found, skipping Redis config"
-            return 0
-        fi
-        
-        # Check if Redis plugin is already installed
-        if wp plugin is-installed redis-cache --allow-root 2>/dev/null; then
-            echo "Redis cache plugin already installed"
-        else
-            echo "Installing Redis cache plugin."
-            if wp plugin install redis-cache --allow-root 2>/dev/null; then
-                echo "Redis cache plugin installed successfully"
-            else
-                echo "Warning: Failed to install Redis cache plugin"
-                return 0
-            fi
-        fi
-        
-        # Check if plugin is already active
-        if wp plugin is-active redis-cache --allow-root 2>/dev/null; then
-            echo "Redis cache plugin already active"
-        else
-            echo "Activating Redis cache plugin."
-            wp plugin activate redis-cache --allow-root 2>/dev/null || echo "Warning: Could not activate Redis cache plugin"
-        fi
-
-        echo "Configuring WordPress to use Redis."
-        
-        # Set Redis configuration (these commands are idempotent)
-        wp config set WP_REDIS_HOST 'redis' --allow-root 2>/dev/null || echo "Warning: Could not set Redis host"
-        wp config set WP_REDIS_PORT 6379 --allow-root 2>/dev/null || echo "Warning: Could not set Redis port"
-        wp config set WP_REDIS_DATABASE 0 --allow-root 2>/dev/null || echo "Warning: Could not set Redis database"
-        wp config set WP_REDIS_TIMEOUT 1 --allow-root 2>/dev/null || echo "Warning: Could not set Redis timeout"
-        wp config set WP_REDIS_READ_TIMEOUT 1 --allow-root 2>/dev/null || echo "Warning: Could not set Redis read timeout"
-        
-        # Enable Redis object cache (check if already enabled first)
-        if wp redis status --allow-root 2>/dev/null | grep -q "Connected"; then
-            echo "Redis cache already enabled and connected"
-        else
-            echo "Enabling Redis object cache."
-            if wp redis enable --allow-root 2>/dev/null; then
-                echo "Redis cache enabled successfully"
-            else
-                echo "Warning: Could not enable Redis cache"
-            fi
-        fi
-        
-        echo "Redis cache configuration completed"
-    else
-        echo "Redis not available, skipping cache setup"
-    fi
-}
-
 #=== Main Execution ===
 main() {
     echo "=== Starting WordPress Setup ==="
@@ -457,7 +457,7 @@ main() {
     # 1. Wait for database
     wait_for_db
     
-    # 2. Configure PHP-FPM
+    # 2. Config PHP-FPM
     config_php_fpm
     
     # 3. Setup WordPress core
@@ -469,21 +469,24 @@ main() {
 
     # 5. Start PHP-FPM
     echo "Starting PHP-FPM server."
-    exec /usr/sbin/php-fpm83 -F
 
-    # 6. Setup content
-    echo "Setting up WordPress content and configuration."
+    # 6. Setup redis
     setup_redis
+
+    # 7. Setup content
+    echo "Setting up WordPress content and configuration."
     setup_wp_content
     setup_wp_navigation
     setup_wp_theme
     echo "WordPress content setup completed"
     
-    # 7. Final permissions
+    # 8. Final permissions
     echo "Setting final permissions."
     chown -R www:www /var/www/wordpress
     find /var/www/wordpress -type d -exec chmod 755 {} \;
     find /var/www/wordpress -type f -exec chmod 644 {} \;
+
+    exec /usr/sbin/php-fpm83 -F
 }
 
 # Trap signals to ensure clean shutdown
