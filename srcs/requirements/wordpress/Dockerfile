@@ -9,6 +9,7 @@ RUN apk add --no-cache \
         php83-xml \
         php83-zip \
         php83-phar \
+        php83-pecl-redis \
         curl \
         bash \
         mariadb-client \
@@ -26,16 +27,6 @@ RUN mkdir -p /var/www/wordpress \
 # Override PHP memory limit
 RUN mkdir -p /etc/php83/conf.d \
     && echo "memory_limit = 512M" > /etc/php83/conf.d/99-custom.ini
-
-# Install WP-CLI globally
-RUN curl -fsSL -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
-    && chmod +x /usr/local/bin/wp
-
-# Pre-install Redis plugin so setup_redis doesn’t fail
-WORKDIR /var/www/wordpress
-RUN wp core download --allow-root \
-    && wp plugin install redis-cache --allow-root \
-    && wp plugin activate redis-cache --allow-root
 
 # Make script executable
 COPY ./tools/wp-setup.sh /
