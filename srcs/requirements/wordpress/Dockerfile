@@ -25,7 +25,8 @@ RUN mkdir -p /var/www/wordpress \
 
 # Override PHP memory limit
 RUN mkdir -p /etc/php83/conf.d \
-    && echo "memory_limit = 512M" > /etc/php83/conf.d/99-custom.ini
+    && echo "memory_limit = 512M" > /etc/php83/conf.d/99-custom.ini \
+    && echo "extension=redis" >> /etc/php83/conf.d/99-custom.ini
 
 # Make script executable
 COPY ./tools/wp-setup.sh /

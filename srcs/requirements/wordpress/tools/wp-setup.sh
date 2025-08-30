@@ -359,26 +359,27 @@ main() {
     ensure_wp_cli
     setup_wp
 
-    # ready marker
-    touch "$WP_DIR/.wp_ready"
-    echo "WordPress setup completed - ready for connections"
-
     echo "Starting PHP-FPM server."
-
-    # Redis/plugin (non-fatal if anything fails)
-    setup_redis
 
     # Content, menu, theme (all idempotent / best-effort)
     echo "Setting up WordPress content and configuration."
-    setup_wp_content
-    setup_wp_navigation
-    setup_wp_theme
+    {
+        setup_redis
+        sleep 5
+        setup_wp_content
+        setup_wp_navigation
+        setup_wp_theme
+    } &
     echo "WordPress content setup completed"
 
     echo "Setting final permissions."
     chown -R "$WP_USER:$WP_GROUP" "$WP_DIR"
     find "$WP_DIR" -type d -exec chmod 755 {} \;
     find "$WP_DIR" -type f -exec chmod 644 {} \;
+
+    # ready marker
+    touch "$WP_DIR/.wp_ready"
+    echo "WordPress setup completed - ready for connections"
 
     exec /usr/sbin/php-fpm83 -F
 }
