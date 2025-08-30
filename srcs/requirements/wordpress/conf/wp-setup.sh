@@ -121,7 +121,7 @@ setup_wp() {
     chown -R www:www /var/www/wordpress
 }
 
-#=== Idempotent WordPress Content Setup ===
+#=== WordPress Content Setup ===
 setup_wp_content() {
     echo "Checking if WordPress content already exists..."
     
@@ -241,7 +241,7 @@ setup_wp_content() {
     echo "WordPress content setup completed"
 }
 
-#=== Idempotent WordPress Navigation ===
+#=== WordPress Navigation ===
 setup_wp_navigation() {
     echo "Setting up WordPress navigation menu..."
     
@@ -335,7 +335,7 @@ setup_wp_navigation() {
     echo "Navigation menu setup completed"
 }
 
-#=== Idempotent WordPress Theme Setup ===  
+#=== WordPress Theme Setup ===  
 setup_wp_theme() {
     echo "Configuring WordPress theme..."
     
@@ -389,7 +389,7 @@ setup_wp_theme() {
     echo "WordPress theme configuration completed"
 }
 
-#=== Idempotent Redis Cache Setup ===
+#=== Redis Cache Setup ===
 setup_redis() {
     if nc -z redis 6379 2>/dev/null; then
         echo "Redis detected, configuring cache..."
@@ -448,32 +448,36 @@ setup_redis() {
 main() {
     echo "=== Starting WordPress Setup ==="
     
-    # 1. Wait for database
+    # Wait for database
     wait_for_db
     
-    # 2. Configure PHP-FPM
+    # Configure PHP-FPM
     config_php_fpm
     
-    # 3. Setup WordPress core
+    # Setup WordPress core
     setup_wp
 
-    # 4. Create ready signal
-    touch /var/www/wordpress/.wp_ready
-    echo "WordPress setup completed - ready for connections"
-
-    # 5. Setup content
+    # Setup content
     echo "Setting up WordPress content and configuration..."
-    # setup_wp_content
-    # setup_wp_navigation
-    # setup_wp_theme
-    setup_redis
+    {
+        sleep 5
+        setup_wp_content
+        setup_wp_navigation
+        setup_wp_theme
+        setup_redis
+    } &
     echo "WordPress content setup completed"
     
-    # 6. Final permissions
+    # Final permissions
     echo "Setting final permissions..."
     chown -R www:www /var/www/wordpress
     find /var/www/wordpress -type d -exec chmod 755 {} \;
     find /var/www/wordpress -type f -exec chmod 644 {} \;
+
+
+    # Create ready signal
+    touch /var/www/wordpress/.wp_ready
+    echo "WordPress setup completed - ready for connections"
 
     echo "Starting PHP-FPM server."
     exec /usr/sbin/php-fpm83 -F
