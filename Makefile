@@ -176,7 +176,7 @@ status-%:
 # Watch logs in real-time
 watch:
 	@echo "$(CYAN)Watching all service logs.$(RESET)"
-	$(COMPOSE) logs -f
+	$(COMPOSE_BONUS) logs -f
 
 watch-%:
 	@echo "$(CYAN)Watching $* logs.$(RESET)"
